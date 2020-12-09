@@ -135,7 +135,13 @@ def plot_free_cash_flow(cash_flow_statement, using_matplotlib=False):
         x,y = zip(*sorted(free_cash_flows.items()))
         # trace = go.Scatter(x=x, y=y)
         # data = [trace]
+        symbol = cash_flow_statement['symbol']
         data = go.Figure([go.Scatter(x=x, y=y)])
+
+        data.update_layout(
+            title="Free Cash Flow for " + symbol,
+            xaxis_title="Year",
+            yaxis_title="Free Cash Flow (Million of Dollars)")
         graph_json = json.dumps(data, cls= plotly.utils.PlotlyJSONEncoder)
         return graph_json
 
