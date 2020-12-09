@@ -1,0 +1,71 @@
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='styles/bootstrap.min.css') }}">
+    <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="/static/js/StockReport.js?r={{reload}}"></script>
+</head>
+
+<body>
+    <form>
+        <div class="form-group">
+            <label for="symbol">Stock Symbol</label>
+            <input type="text" class="form-control" id="symbol" placeholder="Enter Stock Symbol">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="grow_rate">Growth Rate</label>
+            <input type="text" class="form-control" id="grow_rate" placeholder="Enter Growth Rate">
+        </div>
+        <br>
+        <button id="submit" type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+    <div id="results">
+        <table style="height: 196px; width: 467px;">
+            <tbody>
+                <tr>
+                    <td style="width: 378px;">Symbol:</td>
+                    <td style="width: 536px;">
+                        <div id="stock_symbol"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 378px;">Intrinsic Value:</td>
+                    <td style="width: 536px;">
+                        <div id="intrinsic_value"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 378px;">Stock Price:</td>
+                    <td style="width: 536px;">
+                        <div id="stock_price"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 378px;">Beta:</td>
+                    <td style="width: 536px;">
+                        <div id="beta"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        <div class="header">
+            <h2>
+                Plotly Chart Demo
+            </h2>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <!-- ADD THE responsive-plot CLASS -->
+                <div id="free_cash_flow_plot" class="chart"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

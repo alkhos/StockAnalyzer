@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Querying Information for, {{ stock_ticker.Symbol}}!</h1>
+    <p>Intrinsic Value for {{ stock_ticker.symbol}} is {{ stock_ticker.intrinsic_value_per_share}}</p>
+{% endblock %}
