@@ -92,10 +92,16 @@ def get_financial_statement_record_ttm(finiancial_statement, record_name):
         record_ttm = record_ttm + value
     return record_ttm
 
-def get_financial_statement_record(finiancial_statement, record_name):
+def get_financial_statement_record(finiancial_statement, record_name, find_latest_existing=False):
     last_quarter = get_last_quarter(finiancial_statement)
-    value = 0 if last_quarter[record_name] == "None" else int(last_quarter[record_name])
-    return value
+    if find_latest_existing:
+        for record in finiancial_statement['quarterlyReports']:
+            if record[record_name] == "None":
+                continue
+            return int(record[record_name])
+    else:
+        value = 0 if last_quarter[record_name] == "None" else int(last_quarter[record_name])
+        return value
 
 def get_interest_rate(balance_sheet, income_statemet):
     interest_expense = get_financial_statement_record_ttm(income_statemet, 'interestExpense')
@@ -115,6 +121,11 @@ def plot_free_cash_flow(cash_flow_statement, using_matplotlib=False):
         free_cash_flow = int(record['operatingCashflow']) - int(record['capitalExpenditures'])
         free_cash_flows[datetime_object] = free_cash_flow / 1e6
 
+    # add TTM
+    datetime_object = datetime.datetime.now()
+    free_cash_flow_ttm = get_free_cashflow_ttm(cash_flow_statement)
+    free_cash_flows[datetime_object] = free_cash_flow_ttm / 1e6
+    
     if using_matplotlib:
         # using matplotlib
         fig = plt.figure()
@@ -130,23 +141,182 @@ def plot_free_cash_flow(cash_flow_statement, using_matplotlib=False):
         plt.savefig(figure_to_send, format='png', facecolor=(0.95, 0.95, 0.95))
         encoded_img = base64.b64encode(figure_to_send.getvalue()).decode('utf-8').replace('\n', '')
         figure_to_send.close()
-        return figure_to_send
+        return encoded_img
     else:
-        # using plotly
-        x,y = zip(*sorted(free_cash_flows.items()))
-        # trace = go.Scatter(x=x, y=y)
-        # data = [trace]
+        # get the symbol
         symbol = cash_flow_statement['symbol']
-        data = go.Figure([go.Scatter(x=x, y=y)])
 
-        data.update_layout(
-            title="Free Cash Flow for " + symbol,
-            xaxis_title="Year",
-            yaxis_title="Free Cash Flow (Million of Dollars)")
-        graph_json = json.dumps(data, cls= plotly.utils.PlotlyJSONEncoder)
-        return graph_json
+        # using plotly
+        return produce_plotly_time_series(free_cash_flows, symbol, 'Free Cash Flow')
 
+def get_revenue_values(income_statemenet):
+    total_revenues = {}
+    for record in income_statemenet['annualReports']:
+        datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+        total_revenue = int(record['totalRevenue'])
+        total_revenues[datetime_object] = total_revenue / 1e6
 
+    # add TTM
+    datetime_object = datetime.datetime.now()
+    total_revenue_ttm = get_financial_statement_record_ttm(income_statemenet, 'totalRevenue')
+    total_revenues[datetime_object] = total_revenue_ttm / 1e6
+    return total_revenues
+
+def plot_revenue(income_statemenet):
+    # get revenue list
+    total_revenues = get_revenue_values(income_statemenet)
+
+    # get the symbol
+    symbol = income_statemenet['symbol']
+
+    # using plotly
+    return produce_plotly_time_series(total_revenues, symbol, 'Total Revenue')
+
+def plot_accounts_payable(balance_sheet):
+    accounts_payables = {}
+    for record in balance_sheet['annualReports']:
+        datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+        accounts_payable = int(record['accountsPayable'])
+        accounts_payables[datetime_object] = accounts_payable / 1e6
+
+    # add TTM
+    datetime_object = datetime.datetime.now()
+    accounts_payable_ttm = get_financial_statement_record(balance_sheet, 'accountsPayable')
+    if accounts_payable_ttm != 0:
+        accounts_payables[datetime_object] = accounts_payable_ttm / 1e6
+
+    # get the symbol
+    symbol = balance_sheet['symbol']
+
+    # using plotly
+    return produce_plotly_time_series(accounts_payables, symbol, 'Accounts Payable')
+
+def plot_accounts_receivable(balance_sheet):
+    accounts_receivables = {}
+    for record in balance_sheet['annualReports']:
+        datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+        accounts_receivable = int(record['netReceivables'])
+        accounts_receivables[datetime_object] = accounts_receivable / 1e6
+
+    # add TTM
+    datetime_object = datetime.datetime.now()
+    accounts_receivable_ttm = get_financial_statement_record(balance_sheet, 'netReceivables')
+    if accounts_receivable_ttm != 0:
+        accounts_receivables[datetime_object] = accounts_receivable_ttm / 1e6
+
+    # get the symbol
+    symbol = balance_sheet['symbol']
+
+    # using plotly
+    return produce_plotly_time_series(accounts_receivables, symbol, 'Accounts Receivable')
+
+def plot_inventory(balance_sheet):
+    inventories = {}
+    for record in balance_sheet['annualReports']:
+        datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+        inventory = int(record['inventory'])
+        inventories[datetime_object] = inventory / 1e6
+
+    # add TTM
+    datetime_object = datetime.datetime.now()
+    inventory_ttm = get_financial_statement_record(balance_sheet, 'inventory')
+    if inventory_ttm != 0:
+        inventories[datetime_object] = inventory_ttm / 1e6
+
+    # get the symbol
+    symbol = balance_sheet['symbol']
+
+    # using plotly
+    return produce_plotly_time_series(inventories, symbol, 'Accounts Receivable')
+
+def get_eps_values(income_statemenet, balance_sheet):
+    eps_list = {}
+
+    for record in income_statemenet['annualReports']:
+        datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+        total_income = int(record['netIncomeApplicableToCommonShares'])
+        eps_list[datetime_object] = total_income
+
+    for record in balance_sheet['annualReports']:
+        datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+        if datetime_object in eps_list:
+            total_income = eps_list[datetime_object]
+            total_shares = int(record['commonStockSharesOutstanding'])
+            eps_list[datetime_object] = total_income / total_shares
+
+    # add TTM
+    datetime_object = datetime.datetime.now()
+    total_income_ttm = get_financial_statement_record_ttm(income_statemenet, 'netIncomeApplicableToCommonShares')
+    total_shares = get_financial_statement_record(balance_sheet, 'commonStockSharesOutstanding', find_latest_existing=True)
+    eps_list[datetime_object] = total_income_ttm / total_shares
+    return eps_list
+
+def plot_eps(income_statemenet, balance_sheet):
+    # get EPS list
+    eps_list = get_eps_values(income_statemenet, balance_sheet)
+
+    # get the symbol
+    symbol = income_statemenet['symbol']
+
+    # using plotly
+    return produce_plotly_time_series(eps_list, symbol, 'Earnings per Share')
+
+def plot_growth_values(income_statemenet, balance_sheet):
+    revenue_growth = {}
+    eps_growth = {}
+
+    # get current values 
+    revenue_list = get_revenue_values(income_statemenet)
+    eps_list = get_eps_values(income_statemenet, balance_sheet)
+
+    # revenue growth
+    prev_value = None
+    for record in sorted(revenue_list.keys()):
+        if prev_value is None:
+            prev_value = revenue_list[record]
+            continue
+        if revenue_list[record] != 0:
+            revenue_growth[record] = 100*(revenue_list[record] - prev_value)/revenue_list[record]
+        else:
+            revenue_growth[record] = 0
+        prev_value = revenue_list[record]
+
+    # eps growth
+    prev_value = None
+    for record in sorted(eps_list.keys()):
+        if prev_value is None:
+            prev_value = eps_list[record]
+            continue
+        if eps_list[record] != 0:
+            eps_growth[record] = 100*(eps_list[record] - prev_value)/eps_list[record]
+        else:
+            eps_growth[record] = 0
+        prev_value = eps_list[record]
+    
+    # using plotly
+    x,y = zip(*sorted(revenue_growth.items()))
+    data = go.Figure([go.Scatter(x=x, y=y, name='Revenue Growth (%)', )])
+    x,y = zip(*sorted(eps_growth.items()))
+    data.add_trace(go.Scatter(x=x, y=y, name='EPS Growth (%)'))
+
+    data.update_layout(
+        title= 'Revenue and EPS Growth in %',
+        xaxis_title='Year',
+        yaxis_title= 'Growth %')
+    graph_json = json.dumps(data, cls= plotly.utils.PlotlyJSONEncoder)
+    return graph_json
+
+def produce_plotly_time_series(input_dictionary, symbol, record_name):
+    # using plotly
+    x,y = zip(*sorted(input_dictionary.items()))
+    data = go.Figure([go.Scatter(x=x, y=y)])
+
+    data.update_layout(
+        title= record_name + ' for ' + symbol,
+        xaxis_title='Year',
+        yaxis_title=record_name + ' (Million of Dollars)')
+    graph_json = json.dumps(data, cls= plotly.utils.PlotlyJSONEncoder)
+    return graph_json
 
 def get_metadata_item(company_overview, record_name):
     # Beta, SharesOutstanding, MarketCapitalization, cash

@@ -15,12 +15,25 @@ $(function() {
             },
             success: function(data) {
                 console.log(data)
+                    // fill in metrics
                 $('#stock_symbol').html(data['symbol']);
                 $('#intrinsic_value').html(data['intrinsic_value']);
                 $('#stock_price').html(data['stock_price']);
                 $('#beta').html(data['beta']);
+                // plot total revenue
+                Plotly.newPlot('total_revenue_plot', JSON.parse(data['total_revenue_plot']));
+                // plot EPS
+                Plotly.newPlot('eps_plot', JSON.parse(data['eps_plot']));
+                // plot accounts payable
+                Plotly.newPlot('accounts_payable_plot', JSON.parse(data['accounts_payable_plot']));
+                // plot acccounts receivable
+                Plotly.newPlot('accounts_receivable_plot', JSON.parse(data['accounts_receivable_plot']));
+                // plot inventory
+                Plotly.newPlot('inventory_plot', JSON.parse(data['inventory_plot']));
+                // plot FCF
                 Plotly.newPlot('free_cash_flow_plot', JSON.parse(data['free_cash_flow_plot']));
-                //Plotly.plot('free_cashflow_plot', data['free_cashflow_plot']);
+                // Growth Plots
+                Plotly.newPlot('growth_plots', JSON.parse(data['growth_plots']));
             },
             error: function() {
                 alert('Failed to retrieve data');

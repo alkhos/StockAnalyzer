@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from IntrinsicValue.FinancialsAlpha import DocumentType,plot_free_cash_flow
+import IntrinsicValue.FinancialsAlpha as FA
 from flask import render_template, flash, redirect, url_for, request, jsonify, session
 import time
 from app import app, db
@@ -88,16 +88,28 @@ def add():
     if growth_rate and growth_rate != 'None':
         # process growth rate if provided
         intrinsic_value_calculator.growth_rate = int(growth_rate)
-        
+
     intrinsic_value_per_share = intrinsic_value_calculator.get_intrinsic_value_per_share()
-    free_cash_flow_plot = plot_free_cash_flow(intrinsic_value_calculator.cash_flow)
+    total_revenue_plot = FA.plot_revenue(intrinsic_value_calculator.income_statement)
+    eps_plot = FA.plot_eps(intrinsic_value_calculator.income_statement, intrinsic_value_calculator.balance_sheet)
+    accounts_payable_plot = FA.plot_accounts_payable(intrinsic_value_calculator.balance_sheet)
+    accounts_receivable_plot = FA.plot_accounts_receivable(intrinsic_value_calculator.balance_sheet)
+    inventory_plot = FA.plot_inventory(intrinsic_value_calculator.balance_sheet)
+    free_cash_flow_plot = FA.plot_free_cash_flow(intrinsic_value_calculator.cash_flow)
+    growth_plots = FA.plot_growth_values(intrinsic_value_calculator.income_statement, intrinsic_value_calculator.balance_sheet)
 
     return jsonify({
-        'symbol'              : symbol,
-        'intrinsic_value'     : intrinsic_value_per_share,
-        'stock_price'         : intrinsic_value_calculator.current_price,
-        'beta'                : intrinsic_value_calculator.beta ,
-        'free_cash_flow_plot' : free_cash_flow_plot
+        'symbol'                    : symbol,
+        'intrinsic_value'           : intrinsic_value_per_share,
+        'stock_price'               : intrinsic_value_calculator.current_price,
+        'beta'                      : intrinsic_value_calculator.beta ,
+        'total_revenue_plot'        : total_revenue_plot,
+        'eps_plot'                  : eps_plot,
+        'accounts_payable_plot'     : accounts_payable_plot,
+        'accounts_receivable_plot'  : accounts_receivable_plot,
+        'inventory_plot'            : inventory_plot,
+        'free_cash_flow_plot'       : free_cash_flow_plot,
+        'growth_plots'              : growth_plots
     })
 
 @app.route('/bar', methods=['GET', 'POST'])
