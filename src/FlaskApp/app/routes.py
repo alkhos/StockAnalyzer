@@ -57,7 +57,7 @@ def api_info():
     return jsonify(info)
 
 @app.route("/api/intrinsicvalue")
-def process_stock():
+def add():
     symbol = str(request.args.get('symbol', type=str))
     growth_rate = str(request.args.get('growth_rate', type=str))
     intrinsic_value_calculator = IntrinsicValue.InrinsicValue(symbol)
@@ -85,7 +85,10 @@ def process_stock():
         db.session.add(db_record)
         db.session.commit()
 
-
+    if growth_rate and growth_rate != 'None':
+        # process growth rate if provided
+        intrinsic_value_calculator.growth_rate = int(growth_rate)
+        
     intrinsic_value_per_share = intrinsic_value_calculator.get_intrinsic_value_per_share()
     free_cash_flow_plot = plot_free_cash_flow(intrinsic_value_calculator.cash_flow)
 

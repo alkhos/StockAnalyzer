@@ -4,13 +4,24 @@ import IntrinsicValue.WorldBank as WorldBank
 import IntrinsicValue.YahooFinance as YahooFinance
 
 class InrinsicValue:
+    """Intrinsic value and other stock data calculator class
+
+    Returns:
+        IntrinsicValue: Class object with all the company data
+    """
     alpha_api_key = "J579CA8H9XAI3MEY"
 
     # Initialize from symbol
     def __init__(self, symbol):
+        """Constructor
+        Args:
+            symbol (str): stock ticker symbol
+        """
         self.symbol = symbol
 
     def get_financial_statements_externally(self):
+        """Get financial statements from external sources. Free API is limited to 5 calls per minute
+        """
         # overview 
         document_type = FinancialsAlpha.DocumentType.OVERVIEW
         self.overview = FinancialsAlpha.get_financial_statement(self.symbol, document_type, self.alpha_api_key, use_file=False)
@@ -36,6 +47,14 @@ class InrinsicValue:
 
     # initialize from financial statements
     def set_financial_statements(self, overview, income_statement, balance_sheet, cash_flow):
+        """Get financial statements from provided data
+
+        Args:
+            overview (json): Company overview in JSON form
+            income_statement (json): Income statement in JSON form
+            balance_sheet (json): Balance Sheet in JSON form
+            cash_flow (json): Cash flow in JSON form
+        """
         # overview 
         self.overview = overview
 
@@ -52,6 +71,8 @@ class InrinsicValue:
         self.get_constructor_values()
     
     def get_constructor_values(self):
+        """Set the other values that the class needs
+        """
         # free cash flow
         self.free_cashflow_ttm = FinancialsAlpha.get_free_cashflow_ttm(self.cash_flow)
 
@@ -103,12 +124,22 @@ class InrinsicValue:
 
 
     def get_weighted_average_cost_of_capital(self):
+        """Compute the weighted average cost of capital
+
+        Returns:
+            float: weighted average cost of capital
+        """
         r_e = (self.risk_free_rate + self.beta * self.market_risk_premium) / 100
         r_d = (self.interest_rate / 100)* (1 - self.business_tax_rate / 100) 
         wacc = ((self.market_value_of_equity * r_e) +(self.market_value_of_debt * r_d))/ (self.market_value_of_equity + self.market_value_of_debt) 
         return wacc
 
     def get_discounted_cash_flow(self):
+        """Get discounted cash flow
+
+        Returns:
+            list: discounted cash flow as a list
+        """
         discounted_cash_flow = []
         growth_factor = 1 + self.growth_rate / 100
         projected_free_cash_flow = self.free_cashflow_ttm
@@ -119,6 +150,11 @@ class InrinsicValue:
         return discounted_cash_flow
 
     def get_perpetuity_value(self):
+        """Get perpetuity value
+
+        Returns:
+            float: perpetuity value of the company
+        """
         growth_factor = 1 + self.growth_rate / 100
         final_year_projected_free_cash_flow = self.free_cashflow_ttm * pow(growth_factor, 10)
         perpetuity_growth_rate = self.gdp_growth_rate / 100
@@ -127,10 +163,20 @@ class InrinsicValue:
         return perpetuity_value
 
     def get_terminal_value(self):
+        """Get the terminal value for the company based on perpetuity value
+
+        Returns:
+            float: terminal value
+        """
         discount_factor = 1 / pow(1 + self.discount_rate, 10)
         return self.get_perpetuity_value() * discount_factor
 
     def get_intrinsic_value_per_share(self):
+        """Get intrinsic value per share
+
+        Returns:
+            float: Intrinsic value per share
+        """
         intrinsic_value = (sum(self.get_discounted_cash_flow()) + self.get_terminal_value() + self.cash - self.total_liabilities) / self.shares_outstanding
         return round(intrinsic_value, 2)
 
