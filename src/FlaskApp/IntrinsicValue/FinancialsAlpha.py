@@ -130,6 +130,7 @@ def plot_free_cash_flow(cash_flow_statement, using_matplotlib=False):
         plt.savefig(figure_to_send, format='png', facecolor=(0.95, 0.95, 0.95))
         encoded_img = base64.b64encode(figure_to_send.getvalue()).decode('utf-8').replace('\n', '')
         figure_to_send.close()
+        return figure_to_send
     else:
         # using plotly
         x,y = zip(*sorted(free_cash_flows.items()))

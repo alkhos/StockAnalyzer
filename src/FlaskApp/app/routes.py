@@ -57,8 +57,9 @@ def api_info():
     return jsonify(info)
 
 @app.route("/api/intrinsicvalue")
-def add():
+def process_stock():
     symbol = str(request.args.get('symbol', type=str))
+    growth_rate = str(request.args.get('growth_rate', type=str))
     intrinsic_value_calculator = IntrinsicValue.InrinsicValue(symbol)
 
     existing_info = Report.query.filter_by(symbol=symbol).first()

@@ -8,6 +8,7 @@
 </head>
 
 <body>
+    <!-- Input Data -->
     <form>
         <div class="form-group">
             <label for="symbol">Stock Symbol</label>
@@ -21,7 +22,13 @@
         <br>
         <button id="submit" type="submit" class="btn btn-primary">Submit</button>
     </form>
-
+    <br/>
+    <!-- Image loader -->
+    <div id='loader' style='display: none;'>
+        <img src='/static/images/reload_results.gif' width='72px' height='72px'>
+    </div>
+    <br/>
+    <!-- Results -->
     <div id="results">
         <table style="height: 196px; width: 467px;">
             <tbody>

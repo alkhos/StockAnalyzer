@@ -6,10 +6,17 @@ $(function() {
         //    url_value = url_value + '&growth_rate=' + +document.getElementById('growth_rate').value
         //}
         e.preventDefault()
+        var api_url = '/api/intrinsicvalue?symbol=' + document.getElementById('symbol').value
+        if (document.getElementById('growth_rate')) {
+            api_url = api_url + '&growth_rate=' + document.getElementById('growth_rate').value
+        }
         $.ajax({
-            url: '/api/intrinsicvalue?symbol=' + document.getElementById('symbol').value,
+            url: api_url,
+            beforeSend: function() {
+                // Show image container
+                $("#loader").show();
+            },
             success: function(data) {
-                alert('Successfully called');
                 console.log(data)
                 $('#stock_symbol').html(data['symbol']);
                 $('#intrinsic_value').html(data['intrinsic_value']);
@@ -19,7 +26,12 @@ $(function() {
                 //Plotly.plot('free_cashflow_plot', data['free_cashflow_plot']);
             },
             error: function() {
+                alert('Failed to retrieve data');
                 $("#results").html('No results found.');
+            },
+            complete: function(data) {
+                // Hide image container
+                $("#loader").hide();
             }
         });
     });
