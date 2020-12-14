@@ -17,7 +17,17 @@
         <br>
         <div class="form-group">
             <label for="growth_rate">Growth Rate</label>
-            <input type="number" class="form-control" id="growth_rate" placeholder="Enter Growth Rate" min="0">
+            <input type="number" class="form-control" id="growth_rate" placeholder="Enter Alternate Growth Rate in % (Optioal)" min="0">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="effective_tax_rate">Effective Tax Rate</label>
+            <input type="number" class="form-control" id="effective_tax_rate" placeholder="Enter Alternate Effective Business Tax Rate in % (Optioal)" min="0">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="interest_rate">Interest Rate</label>
+            <input type="number" class="form-control" id="interest_rate" placeholder="Enter Alternate Business Interest Rate in % (Optioal)" min="0">
         </div>
         <br>
         <button id="submit" type="submit" class="btn btn-primary">Submit</button>
@@ -29,98 +39,296 @@
     </div>
     <br/>
     <!-- Results -->
-    <div id="results">
-        <table style="height: 196px; width: 467px;">
+    <div id="results" style='display: none;'>
+        <div class="header">
+            <h2>
+                Stock Fundamental Data
+            </h2>
+        </div>
+        <!-- Intrinsic Value Components -->
+        <table class="table table-hover table-dark table-striped w-auto">
+            <thead>
+                <tr>
+                    <th scope="col"><b>Metric</b></th>
+                    <th scope="col"><b>Value</b></th>
+                </tr>
+            </thead>
             <tbody>
                 <tr>
-                    <td style="width: 378px;">Symbol:</td>
-                    <td style="width: 536px;">
+                    <th scope="row" style="background-color:rgb(0, 140, 255);">Symbol:</th>
+                    <td style="background-color:rgb(0, 140, 255);">
                         <div id="stock_symbol"></div>
                     </td>
                 </tr>
                 <tr>
-                    <td style="width: 378px;">Intrinsic Value:</td>
-                    <td style="width: 536px;">
+                    <th scope="row">Stock Name:</th>
+                    <td>
+                        <div id="stock_name"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row" style="background-color:rgb(230, 71, 71);" id="intrinsic_value_1">Intrinsic Value (USD):</th>
+                    <td style="background-color:rgb(230, 71, 71);" id="intrinsic_value_2">
                         <div id="intrinsic_value"></div>
                     </td>
                 </tr>
                 <tr>
-                    <td style="width: 378px;">Stock Price:</td>
-                    <td style="width: 536px;">
+                    <th scope="row">Stock Price (USD):</th>
+                    <td>
                         <div id="stock_price"></div>
                     </td>
                 </tr>
                 <tr>
-                    <td style="width: 378px;">Beta:</td>
-                    <td style="width: 536px;">
+                    <th scope="row">Market Cap (Millions USD):</th>
+                    <td>
+                        <div id="market_cap"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Number of Shares Outstanding (in Millions):</th>
+                    <td>
+                        <div id="shares_outstanding"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Short-Term Debt (in Millions):</th>
+                    <td>
+                        <div id="short_term_debt"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Long-Term Debt (in Millions):</th>
+                    <td>
+                        <div id="long_term_debt"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Total Liabilities (in Millions):</th>
+                    <td>
+                        <div id="total_liabilities"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Cash & Cash Equivalents (in Millions):</th>
+                    <td>
+                        <div id="cash"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Beta:</th>
+                    <td>
                         <div id="beta"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Free Cash Flow (TTM) (in Millions):</th>
+                    <td>
+                        <div id="ttm_free_cash_flow"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">GDP Growth Rate (%):</th>
+                    <td>
+                        <div id="gdp_growth_rate"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Market Risk Premium (%):</th>
+                    <td>
+                        <div id="marktet_rish_premium"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Risk Free Rate (%):</th>
+                    <td>
+                        <div id="risk_free_rate"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Business Interest Rate (%):</th>
+                    <td>
+                        <div id="business_interest_rate"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Business Income Tax Rate (%):</th>
+                    <td>
+                        <div id="income_tax_rate"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Business Growth Rate (%):</th>
+                    <td>
+                        <div id="business_growth_rate"></div>
                     </td>
                 </tr>
             </tbody>
         </table>
-        <br>
+
         <div class="header">
             <h2>
-                Stock Data
+                Ben Graham Data
             </h2>
         </div>
+        <!-- Intrinsic Value Components -->
+        <table class="table table-hover table-dark table-striped w-auto">
+            <thead>
+                <tr>
+                    <th scope="col"><b>Metric</b></th>
+                    <th scope="col"><b>Value</b></th>
+                    <th scope="col"><b>Requirement</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">Current Assets / Current Liabilities:</th>
+                    <td>
+                        <div id="current_ratio"></div>
+                    </td>
+                    <td>A least 1.5</td>
+                </tr>
+                <tr>
+                    <th scope="row">Debt / Net Current Assests:</th>
+                    <td>
+                        <div id="d_t_n_c_a_ratio"></div>
+                    </td>
+                    <td>No more than 1.1</td>
+                </tr>
+                <tr>
+                    <th scope="row">Earning Deficits:</th>
+                    <td>
+                        <div id="earning_deficits"></div>
+                    </td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <th scope="row">Dividend Per Share:</th>
+                    <td>
+                        <div id="dividend"></div>
+                    </td>
+                    <td>Any value existing</td>
+                </tr>
+                <tr>
+                    <th scope="row">Earning Growth:</th>
+                    <td>
+                        <div id="earning_growth"></div>
+                    </td>
+                    <td>N/A</td>
+                </tr>
+                <tr>
+                    <th scope="row">Pirce / Net Tangible Assets:</th>
+                    <td>
+                        <div id="p_t_b_v_ratio"></div>
+                        <td>Less than 1.2</td>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Return on Invested Capital (ROIC):</th>
+                    <td>
+                        <div id="r_o_i_c"></div>
+                        <td>At least 10%</td>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
-    <!-- Total Revenue Plot -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div id="total_revenue_plot" class="chart"></div>
+    <!-- Links -->
+    <div id="links" style='display: none;' class="card-columns">
+        <div class="card" style="width: 18rem;display: inline-block;">
+            <img src='/static/images/yfinance.png' class="card-img-top" alt="..." width='72px' height='72px'>
+            <div class="card-body">
+                <h5 class="card-title">Yahoo Finance</h5>
+                <a id="yfinance" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem;display: inline-block;">
+            <img src='/static/images/morningstar.png' class="card-img-top" alt="..." width='72px' height='72px'>
+            <div class="card-body">
+                <h5 class="card-title">Morning Star</h5>
+                <a id="morningstar" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem;display: inline-block;">
+            <img src='/static/images/macrotrendss.jpg' class="card-img-top" alt="..." width='72px' height='72px'>
+            <div class="card-body">
+                <h5 class="card-title">Macro Trends</h5>
+                <a id="macrotrends" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem;display: inline-block;">
+            <img src='/static/images/annualreports.png' class="card-img-top" alt="..." width='72px' height='72px'>
+            <div class="card-body">
+                <h5 class="card-title">Annual Reports</h5>
+                <a id="annualreports" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
             </div>
         </div>
     </div>
-    <!-- EPS Plot -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div id="eps_plot" class="chart"></div>
+
+    <!-- Plots -->
+    <div id="plots" style='display: none;'>
+        <div class="header">
+            <h2>
+                Stock Plots
+            </h2>
+        </div>
+        <!-- Total Revenue Plot -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="total_revenue_plot" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- EPS Plot -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="eps_plot" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Free Cash Flow Plot -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="free_cash_flow_plot" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Accounts Payable Plot -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="accounts_payable_plot" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Accounts Receivable Plot -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="accounts_receivable_plot" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Inventory Plot -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="inventory_plot" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Growth Plot -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="growth_plots" class="chart"></div>
+                </div>
             </div>
         </div>
     </div>
-    <!-- Free Cash Flow Plot -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div id="free_cash_flow_plot" class="chart"></div>
-            </div>
-        </div>
-    </div>
-    <!-- Accounts Payable Plot -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div id="accounts_payable_plot" class="chart"></div>
-            </div>
-        </div>
-    </div>
-    <!-- Accounts Receivable Plot -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div id="accounts_receivable_plot" class="chart"></div>
-            </div>
-        </div>
-    </div>
-    <!-- Inventory Plot -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div id="inventory_plot" class="chart"></div>
-            </div>
-        </div>
-    </div>
-    <!-- Growth Plot -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div id="growth_plots" class="chart"></div>
-            </div>
-        </div>
-    </div>
+
 </body>
 
 </html>

@@ -2,6 +2,10 @@ import IntrinsicValue.FinancialsAlpha as FinancialsAlpha
 import IntrinsicValue.Investing as Investing
 import IntrinsicValue.WorldBank as WorldBank
 import IntrinsicValue.YahooFinance as YahooFinance
+import plotly.graph_objects as go
+import plotly
+import datetime
+import json
 
 class InrinsicValue:
     """Intrinsic value and other stock data calculator class
@@ -25,22 +29,22 @@ class InrinsicValue:
         # overview 
         document_type = FinancialsAlpha.DocumentType.OVERVIEW
         self.overview = FinancialsAlpha.get_financial_statement(self.symbol, document_type, self.alpha_api_key, use_file=False)
-        # FinancialsAlpha.save_as_json(overview, document_type)
+        # FinancialsAlpha.save_as_json(self.overview, document_type)
 
         # income statement 
         document_type = FinancialsAlpha.DocumentType.INCOME_STATEMENT
         self.income_statement = FinancialsAlpha.get_financial_statement(self.symbol, document_type, self.alpha_api_key, use_file=False)
-        # FinancialsAlpha.save_as_json(income_statement, document_type)
+        # FinancialsAlpha.save_as_json(self.income_statement, document_type)
 
         # balance sheet
         document_type = FinancialsAlpha.DocumentType.BALANCE_SHEET
         self.balance_sheet = FinancialsAlpha.get_financial_statement(self.symbol, document_type, self.alpha_api_key, use_file=False)
-        # FinancialsAlpha.save_as_json(balance_sheet, document_type)
+        # FinancialsAlpha.save_as_json(self.balance_sheet, document_type)
 
         # cashflow 
         document_type = FinancialsAlpha.DocumentType.CASH_FLOW
         self.cash_flow = FinancialsAlpha.get_financial_statement(self.symbol, document_type, self.alpha_api_key, use_file=False)
-        # FinancialsAlpha.save_as_json(cash_flow, document_type)
+        # FinancialsAlpha.save_as_json(self.cash_flow, document_type)
 
         # get other values
         self.get_constructor_values()
@@ -179,6 +183,225 @@ class InrinsicValue:
         """
         intrinsic_value = (sum(self.get_discounted_cash_flow()) + self.get_terminal_value() + self.cash - self.total_liabilities) / self.shares_outstanding
         return round(intrinsic_value, 2)
+
+    def set_stock_price_at_annaul_reporting_dates(self):
+        """Get the values of stock at annual report dates
+        """
+        self.annual_stock_prices = {}
+        for record in self.balance_sheet['annualReports']:
+            date_str = record['fiscalDateEnding']
+            stock_price = YahooFinance.get_price_on_date(self.symbol, date_str)
+            self.annual_stock_prices[date_str] = stock_price
+    
+    def set_stock_price_at_quarterly_reporting_dates(self):
+        """Get the values of stock at quarterly report dates
+        """
+        self.quarterlyl_stock_prices = {}
+        for record in self.balance_sheet['quarterlyReports']:
+            date_str = record['fiscalDateEnding']
+            stock_price = YahooFinance.get_price_on_date(self.symbol, date_str)
+            self.quarterlyl_stock_prices[date_str] = stock_price
+    
+    #################### PLOTTERS #################################
+    def plot_free_cash_flow(self):
+        """Plot Free Cashflow
+
+        Returns:
+            json: Free cash flow vs time as a plotly json
+        """
+        free_cash_flows = {}
+        for record in self.cash_flow['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            free_cash_flow = int(record['operatingCashflow']) - int(record['capitalExpenditures'])
+            free_cash_flows[datetime_object] = free_cash_flow / 1e6
+
+        # add TTM
+        datetime_object = datetime.datetime.now()
+        free_cash_flow_ttm = FinancialsAlpha.get_free_cashflow_ttm(self.cash_flow)
+        free_cash_flows[datetime_object] = free_cash_flow_ttm / 1e6
+
+        # using plotly
+        return FinancialsAlpha.produce_plotly_time_series(free_cash_flows, self.symbol, 'Free Cash Flow')
+
+    def get_revenue_values(self):
+        """get revenue values
+
+        Returns:
+            dict: a time dictionary of revenue values 
+        """
+        self.revenue_list = {}
+        for record in self.income_statement['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            total_revenue = int(record['totalRevenue'])
+            self.revenue_list[datetime_object] = total_revenue / 1e6
+
+        # add TTM
+        datetime_object = datetime.datetime.now()
+        total_revenue_ttm = FinancialsAlpha.get_financial_statement_record_ttm(self.income_statement, 'totalRevenue')
+        self.revenue_list[datetime_object] = total_revenue_ttm / 1e6
+
+    def plot_revenue(self):
+        """Plot Revenue
+
+        Returns:
+            json: Revenue vs time as a plotly json
+        """
+        # set revenue list
+        if not hasattr(self, 'revenue_list'):
+            self.get_revenue_values()
+        
+        # using plotly
+        return FinancialsAlpha.produce_plotly_time_series(self.revenue_list, self.symbol, 'Total Revenue')
+
+    def plot_accounts_payable(self):
+        """Plot accounts payable
+
+        Returns:
+            json: accounts payable vs time as a plotly json
+        """
+        accounts_payables = {}
+        for record in self.balance_sheet['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            accounts_payable = int(record['accountsPayable'])
+            accounts_payables[datetime_object] = accounts_payable / 1e6
+
+        # add TTM
+        datetime_object = datetime.datetime.now()
+        accounts_payable_ttm = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'accountsPayable')
+        if accounts_payable_ttm != 0:
+            accounts_payables[datetime_object] = accounts_payable_ttm / 1e6
+
+        # using plotly
+        return FinancialsAlpha.produce_plotly_time_series(accounts_payables, self.symbol, 'Accounts Payable')
+
+    def plot_accounts_receivable(self):
+        """Plot accounts receivable
+
+        Returns:
+            json: accounts receivable vs time as a plotly json
+        """
+        accounts_receivables = {}
+        for record in self.balance_sheet['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            accounts_receivable = int(record['netReceivables'])
+            accounts_receivables[datetime_object] = accounts_receivable / 1e6
+
+        # add TTM
+        datetime_object = datetime.datetime.now()
+        accounts_receivable_ttm = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'netReceivables')
+        if accounts_receivable_ttm != 0:
+            accounts_receivables[datetime_object] = accounts_receivable_ttm / 1e6
+
+        # using plotly
+        return FinancialsAlpha.produce_plotly_time_series(accounts_receivables, self.symbol, 'Accounts Receivable')
+
+    def plot_inventory(self):
+        """Plot inventory
+
+        Returns:
+            json: inventory vs time as a plotly json
+        """
+        inventories = {}
+        for record in self.balance_sheet['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            inventory = int(record['inventory'])
+            inventories[datetime_object] = inventory / 1e6
+
+        # add TTM
+        datetime_object = datetime.datetime.now()
+        inventory_ttm = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'inventory')
+        if inventory_ttm != 0:
+            inventories[datetime_object] = inventory_ttm / 1e6
+
+        # using plotly
+        return FinancialsAlpha.produce_plotly_time_series(inventories, self.symbol, 'Accounts Receivable')
+
+    def get_eps_values(self):
+        """get EPS values
+
+        Returns:
+            dict: a time dictionary of EPS values 
+        """
+        self.eps_list = {}
+
+        for record in self.income_statement['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            total_income = int(record['netIncomeApplicableToCommonShares'])
+            self.eps_list[datetime_object] = total_income
+
+        for record in self.balance_sheet['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            if datetime_object in self.eps_list:
+                total_income = self.eps_list[datetime_object]
+                total_shares = int(record['commonStockSharesOutstanding'])
+                self.eps_list[datetime_object] = total_income / total_shares
+
+        # add TTM
+        datetime_object = datetime.datetime.now()
+        total_income_ttm = FinancialsAlpha.get_financial_statement_record_ttm(self.income_statement, 'netIncomeApplicableToCommonShares')
+        total_shares = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'commonStockSharesOutstanding', find_latest_existing=True)
+        self.eps_list[datetime_object] = total_income_ttm / total_shares
+
+    def plot_eps(self):
+        """Plot EPS
+
+        Returns:
+            json: EPS vs time as a plotly json
+        """
+        # set EPS list
+        if not hasattr(self, 'eps_list'):
+            self.get_eps_values()
+
+        # using plotly
+        return FinancialsAlpha.produce_plotly_time_series(self.eps_list, self.symbol, 'Earnings per Share')
+
+    def plot_growth_values(self):
+        """Plot % growth for EPS and revenue
+
+        Returns:
+            json: EPS and revenue growth as a plotyly json
+        """
+        revenue_growth = {}
+        eps_growth = {}
+
+        # revenue growth
+        prev_value = None
+        for record in sorted(self.revenue_list.keys()):
+            if prev_value is None:
+                prev_value = self.revenue_list[record]
+                continue
+            if self.revenue_list[record] != 0:
+                revenue_growth[record] = 100*(self.revenue_list[record] - prev_value)/self.revenue_list[record]
+            else:
+                revenue_growth[record] = 0
+            prev_value = self.revenue_list[record]
+
+        # eps growth
+        prev_value = None
+        for record in sorted(self.eps_list.keys()):
+            if prev_value is None:
+                prev_value = self.eps_list[record]
+                continue
+            if self.eps_list[record] != 0:
+                eps_growth[record] = 100*(self.eps_list[record] - prev_value)/self.eps_list[record]
+            else:
+                eps_growth[record] = 0
+            prev_value = self.eps_list[record]
+        
+        # using plotly
+        x,y = zip(*sorted(revenue_growth.items()))
+        data = go.Figure([go.Scatter(x=x, y=y, name='Revenue Growth (%)', )])
+        x,y = zip(*sorted(eps_growth.items()))
+        data.add_trace(go.Scatter(x=x, y=y, name='EPS Growth (%)'))
+
+        data.update_layout(
+            title= 'Revenue and EPS Growth in %',
+            xaxis_title='Year',
+            yaxis_title= 'Growth %')
+        graph_json = json.dumps(data, cls= plotly.utils.PlotlyJSONEncoder)
+        return graph_json
+
+
 
     
 
