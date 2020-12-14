@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 import IntrinsicValue.FinancialsAlpha as FA
 from flask import render_template, flash, redirect, url_for, request, jsonify, session
 import time
@@ -7,13 +7,7 @@ from app.models import Report
 from app.forms import StockInputForm
 from IntrinsicValue import IntrinsicValue
 import sys
-import plotly
-import plotly.graph_objects as go
-import json
-import pandas as pd 
-import numpy as np
 import requests
-import os.path
 import urllib.parse
  
 
@@ -173,45 +167,3 @@ def add():
         'free_cash_flow_plot'       : free_cash_flow_plot,
         'growth_plots'              : growth_plots
     })
-
-@app.route('/bar', methods=['GET', 'POST'])
-def change_features():
-
-    feature = request.args['selected']
-    graphJSON= create_plot(feature)
-
-    return graphJSON
-
-@app.route('/showLineChart')
-def index1():
-    bar = create_plot('Bar')
-    return render_template('index1.html', plot=bar)
-
-def create_plot(feature):
-    if feature == 'Bar':
-        N = 40
-        x = np.linspace(0, 1, N)
-        y = np.random.randn(N)
-        df = pd.DataFrame({'x': x, 'y': y}) # creating a sample dataframe
-        data = [
-            go.Bar(
-                x=df['x'], # assign x as the dataframe column 'x'
-                y=df['y']
-            )
-        ]
-    else:
-        N = 1000
-        random_x = np.random.randn(N)
-        random_y = np.random.randn(N)
-
-        # Create a trace
-        data = [go.Scatter(
-            x = random_x,
-            y = random_y,
-            mode = 'markers'
-        )]
-
-
-    graphJSON = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
-
-    return graphJSON
