@@ -1,3 +1,4 @@
+from numpy.lib.type_check import common_type
 import requests
 import json
 import datetime
@@ -342,16 +343,82 @@ def get_price_to_tangible_book_value(balance_sheet, stock_price, shares_outstand
     tangible_book_value = total_assets - total_liabilities - intangible_assets - good_will + negative_good_will
     return float(stock_price/(tangible_book_value/shares_outstanding))
 
-def get_return_on_invested_capital(income_statement, balance_sheet):
+def get_return_on_invested_capital(income_statement, balance_sheet, cash_flow, tax_rate=''):
     income_before_tax = get_financial_statement_record_ttm(income_statement, 'incomeBeforeTax')
     income_tax_expense = get_financial_statement_record_ttm(income_statement, 'incomeTaxExpense')
-    income_after_tax = income_before_tax - income_tax_expense
+    operating_income = get_financial_statement_record_ttm(income_statement, 'operatingIncome')
+    if tax_rate == '' or tax_rate == 'None' or tax_rate == None:
+        nopat = operating_income*(1 - float(income_tax_expense/income_before_tax))
+    else:
+        nopat = operating_income*(1 - float(tax_rate)/100)
+    # long_term_debt = get_financial_statement_record(balance_sheet, 'longTermDebt')
+    # short_term_debt = get_financial_statement_record(balance_sheet, 'shortTermDebt')
+    # shareholder_equity = get_financial_statement_record(balance_sheet, 'totalShareholderEquity')
+    # capital_lease = get_financial_statement_record(balance_sheet, 'capitalLeaseObligations')
+    # invested_capital = long_term_debt + short_term_debt + capital_lease + shareholder_equity
+    invested_capital = get_invested_capital(balance_sheet, cash_flow)
+    return float(100*nopat/invested_capital)
+
+def get_invested_capital(balance_sheet, cash_flow):
+    # from balance sheet
     long_term_debt = get_financial_statement_record(balance_sheet, 'longTermDebt')
     short_term_debt = get_financial_statement_record(balance_sheet, 'shortTermDebt')
-    shareholder_equity = get_financial_statement_record(balance_sheet, 'totalShareholderEquity')
-    capital_lease = get_financial_statement_record(balance_sheet, 'capitalLeaseObligations')
-    invested_capital = long_term_debt + short_term_debt + capital_lease + shareholder_equity
-    return float(100*income_after_tax/invested_capital)
+    lease_obligations = get_financial_statement_record(balance_sheet, 'capitalLeaseObligations')
+    total_debt_and_leases = short_term_debt + long_term_debt + lease_obligations
+
+    # from income statement
+    common_stock = get_financial_statement_record(balance_sheet, 'commonStock')
+    retained_earnings = get_financial_statement_record(balance_sheet, 'retainedEarnings')
+    total_equity_and_equity_equivalents = common_stock + retained_earnings
+
+    # from cash flow statement
+    cash_from_financing = get_financial_statement_record_ttm(cash_flow, 'cashflowFromFinancing')
+    cash_from_investing = get_financial_statement_record_ttm(cash_flow, 'cashflowFromInvestment')
+    non_operating_cash = cash_from_financing + cash_from_investing
+
+    return total_debt_and_leases + total_equity_and_equity_equivalents + non_operating_cash
+
+
+def get_price_to_earnings_ratio(overview, stock_price):
+    diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
+    return float(stock_price/diluted_earnings_per_share)
+
+def get_price_to_earnings_over_growth_ratio(overview, stock_price):
+    diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
+    nominal_peg = float(overview['PEGRatio'])
+    nominal_pe = float(overview['PERatio'])
+    growth = nominal_pe / nominal_peg
+    return float(diluted_earnings_per_share/growth)
+
+def get_dividend_adjusted_price_to_earnings_over_growth_ratio(overview, stock_price):
+    diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
+    nominal_peg = float(overview['PEGRatio'])
+    nominal_pe = float(overview['PERatio'])
+    growth = nominal_pe / nominal_peg
+    dividend_yield = float(overview['DividendYield']) if overview['DividendYield'] != 'None' else 0
+    return float(diluted_earnings_per_share/(growth + dividend_yield))
+
+def get_net_cash_per_share(balance_sheet, shares_outstanding):
+    net_cash = get_financial_statement_record(balance_sheet, 'cashAndShortTermInvestments')
+    return float(net_cash/shares_outstanding)
+
+def get_debt_to_equity_ratio(balance_sheet):
+    total_liabilities = get_financial_statement_record(balance_sheet, 'totalLiabilities')
+    total_shareholder_equity = get_financial_statement_record(balance_sheet, 'totalShareholderEquity')
+    return float(total_liabilities/total_shareholder_equity)
+
+def get_inventory_turnover_last_year(balance_sheet, income_statement):
+    total_reveneue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
+    gross_profit = get_financial_statement_record_ttm(income_statement, 'grossProfit')
+    cogs = total_reveneue - gross_profit
+    last_four_quarters_balance_sheet = get_last_four_quarters(balance_sheet)
+    inventories = []
+    c = 0
+    for record in last_four_quarters_balance_sheet:
+        inventories.append(int(record['inventory']))
+        c = c + 1
+    average_inventory = sum(inventories) / c
+    return float(cogs/average_inventory)
 
 def count_earning_deficits(income_statement):
     """Find number of annual reports and number of quarters reporting earnings deficit

@@ -170,7 +170,7 @@
                 Ben Graham Data
             </h2>
         </div>
-        <!-- Intrinsic Value Components -->
+        <!-- Ben Graham Criteria -->
         <table class="table table-hover table-dark table-striped w-auto">
             <thead>
                 <tr>
@@ -188,14 +188,14 @@
                     <td>A least 1.5</td>
                 </tr>
                 <tr>
-                    <th scope="row">Debt / Net Current Assests:</th>
+                    <th scope="row" class="tool-tip" title="How much short-term plus long-term debt compares to net current assets">Debt / Net Current Assests:</th>
                     <td>
                         <div id="d_t_n_c_a_ratio"></div>
                     </td>
                     <td>No more than 1.1</td>
                 </tr>
                 <tr>
-                    <th scope="row">Earning Deficits:</th>
+                    <th scope="row" class="tool-tip" title="How many recent annuals/quarters earnings were negative">Earning Deficits:</th>
                     <td>
                         <div id="earning_deficits"></div>
                     </td>
@@ -209,7 +209,7 @@
                     <td>Any value existing</td>
                 </tr>
                 <tr>
-                    <th scope="row">Earning Growth:</th>
+                    <th scope="row" class="tool-tip" title="Earning growth this year vs last year and this quarter vs last quarter">Earning Growth:</th>
                     <td>
                         <div id="earning_growth"></div>
                     </td>
@@ -223,15 +223,90 @@
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row">Return on Invested Capital (ROIC):</th>
+                    <th scope="row" class="tool-tip" title="Return that a company makes above the average cost payed for debt and equity capital (NOPAT/Invested Capital).">Return on Invested Capital (ROIC):</th>
                     <td>
                         <div id="r_o_i_c"></div>
-                        <td>At least 10%</td>
+                        <td>At least 10% / highe than WACC</td>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Weighted average of cost of debt (interest paid on debt) and cost of equity">Weighted Average Cost of Copital (WACC):</th>
+                    <td>
+                        <div id="w_a_c_c"></div>
+                        <td>Lower than ROIC</td>
                     </td>
                 </tr>
             </tbody>
         </table>
+        <div class="header">
+            <h2>
+                Peter Lynch Data
+            </h2>
+        </div>
+        <!-- Peter Lynch Criteria -->
+        <table class="table table-hover table-dark table-striped w-auto">
+            <thead>
+                <tr>
+                    <th scope="col"><b>Metric</b></th>
+                    <th scope="col"><b>Value</b></th>
+                    <th scope="col"><b>Requirement</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">Price / Earnings (P/E) vs Current Growth:</th>
+                    <td>
+                        <div id="p_e"></div>
+                    </td>
+                    <td>Should have more growth than P/E</td>
+                </tr>
+                <tr>
+                    <th scope="row">Price / Earnings to Growth Ratio (PEG):</th>
+                    <td>
+                        <div id="p_e_g"></div>
+                    </td>
+                    <td>No more than 1</td>
+                </tr>
+                <tr>
+                    <th scope="row">Dividend Adjusted Price / Earnings to Growth Ratio (DPEG)::</th>
+                    <td>
+                        <div id="d_p_e_g"></div>
+                    </td>
+                    <td>No more than 1</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Earning growth this year vs last year and this quarter vs last quarter">Net Cash Per Share:</th>
+                    <td>
+                        <div id="n_c_s" class="tool-tip" title="% of a company’s share price available to spend on strengthening the business, paying down debt, returning money to shareholders, and other positive campaigns."></div>
+                    </td>
+                    <td>Compare to EPS</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Measure of the degree to which a company is financing its operations through debt versus wholly-owned funds">Debt to Equity Ratio (D/E):</th>
+                    <td>
+                        <div id="d_e_ratio"></div>
+                    </td>
+                    <td>No more than 2</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Shows how many times a company has sold and replaced inventory during a given period. A low turnover implies weak sales and possibly excess inventory, while a high ratio implies either strong sales or insufficient inventory.">Inventory Turnover:</th>
+                    <td>
+                        <div id="invetory_turnover"></div>
+                    </td>
+                    <td>Between 5 to 10</td>
+                </tr>
+                <tr>
+                    <th scope="row">Insider Ownership (%):</th>
+                    <td>
+                        <div id="insider"></div>
+                    </td>
+                    <td>Reasonable stake by owners</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+
     <!-- Links -->
     <div id="links" style='display: none;' class="card-columns">
         <div class="card" style="width: 18rem;display: inline-block;">
@@ -319,11 +394,18 @@
                 </div>
             </div>
         </div>
-        <!-- Growth Plot -->
+        <!-- Growth Plots -->
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <div id="growth_plots" class="chart"></div>
+                    <div id="growth_plots_annual" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="growth_plots_quarterly" class="chart"></div>
                 </div>
             </div>
         </div>

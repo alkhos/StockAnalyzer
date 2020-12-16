@@ -229,16 +229,32 @@ class InrinsicValue:
         Returns:
             dict: a time dictionary of revenue values 
         """
-        self.revenue_list = {}
+        self.revenue_annual_list = {}
         for record in self.income_statement['annualReports']:
             datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
             total_revenue = int(record['totalRevenue'])
-            self.revenue_list[datetime_object] = total_revenue / 1e6
+            self.revenue_annual_list[datetime_object] = total_revenue / 1e6
 
         # add TTM
         datetime_object = datetime.datetime.now()
         total_revenue_ttm = FinancialsAlpha.get_financial_statement_record_ttm(self.income_statement, 'totalRevenue')
-        self.revenue_list[datetime_object] = total_revenue_ttm / 1e6
+        self.revenue_annual_list[datetime_object] = total_revenue_ttm / 1e6
+
+        # quarterly 
+        self.revenue_quarterly_list = {}
+
+        for record in self.income_statement['quarterlyReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            year = datetime_object.year
+            month = datetime_object.month
+            total_revenue = int(record['totalRevenue'])
+            
+            # great year dictionary if needed
+            if year not in self.revenue_quarterly_list:
+                self.revenue_quarterly_list[year] = {}
+            
+            quarter = self.get_quarter_from_month(month)
+            self.revenue_quarterly_list[year][quarter] = total_revenue
 
     def plot_revenue(self):
         """Plot Revenue
@@ -247,11 +263,11 @@ class InrinsicValue:
             json: Revenue vs time as a plotly json
         """
         # set revenue list
-        if not hasattr(self, 'revenue_list'):
+        if not hasattr(self, 'revenue_annual_list'):
             self.get_revenue_values()
         
         # using plotly
-        return FinancialsAlpha.produce_plotly_time_series(self.revenue_list, self.symbol, 'Total Revenue')
+        return FinancialsAlpha.produce_plotly_time_series(self.revenue_annual_list, self.symbol, 'Total Revenue')
 
     def plot_accounts_payable(self):
         """Plot accounts payable
@@ -317,30 +333,100 @@ class InrinsicValue:
         return FinancialsAlpha.produce_plotly_time_series(inventories, self.symbol, 'Accounts Receivable')
 
     def get_eps_values(self):
-        """get EPS values
+        """get EPS values for each year and each quarter
 
         Returns:
             dict: a time dictionary of EPS values 
         """
-        self.eps_list = {}
+        self.eps_annual_list = {}
 
         for record in self.income_statement['annualReports']:
             datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
             total_income = int(record['netIncomeApplicableToCommonShares'])
-            self.eps_list[datetime_object] = total_income
+            self.eps_annual_list[datetime_object] = total_income
 
         for record in self.balance_sheet['annualReports']:
             datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
-            if datetime_object in self.eps_list:
-                total_income = self.eps_list[datetime_object]
+            if datetime_object in self.eps_annual_list:
+                total_income = self.eps_annual_list[datetime_object]
                 total_shares = int(record['commonStockSharesOutstanding'])
-                self.eps_list[datetime_object] = total_income / total_shares
+                self.eps_annual_list[datetime_object] = total_income / total_shares
 
         # add TTM
         datetime_object = datetime.datetime.now()
         total_income_ttm = FinancialsAlpha.get_financial_statement_record_ttm(self.income_statement, 'netIncomeApplicableToCommonShares')
         total_shares = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'commonStockSharesOutstanding', find_latest_existing=True)
-        self.eps_list[datetime_object] = total_income_ttm / total_shares
+        self.eps_annual_list[datetime_object] = total_income_ttm / total_shares
+
+        # quarterly
+        self.eps_quarterly_list = {}
+        quarterly_shares = {}
+        quarterly_income = {}
+
+        # get income
+        for record in self.income_statement['quarterlyReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            year = datetime_object.year
+            month = datetime_object.month
+            total_income = int(record['netIncomeApplicableToCommonShares'])
+            
+            # great year dictionary if needed
+            if year not in quarterly_income:
+                quarterly_income[year] = {}
+            
+            quarter = self.get_quarter_from_month(month)
+            quarterly_income[year][quarter] = total_income
+
+        # get number of shares
+        for record in self.balance_sheet['quarterlyReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            year = datetime_object.year
+            month = datetime_object.month
+            if record['commonStockSharesOutstanding'] == 'None':
+                continue
+            total_shares = int(record['commonStockSharesOutstanding'])
+            
+            # great year dictionary if needed
+            if year not in quarterly_shares:
+                quarterly_shares[year] = {}
+            
+            quarter = self.get_quarter_from_month(month)
+            quarterly_shares[year][quarter] = total_shares
+
+        # calculate EPS
+        for year in quarterly_income:
+            if year not in quarterly_shares:
+                continue
+            if year not in self.eps_quarterly_list:
+                self.eps_quarterly_list[year] = {}
+            for quarter in quarterly_income[year]:
+                if quarter not in quarterly_shares[year]:
+                    continue
+                self.eps_quarterly_list[year][quarter] = quarterly_income[year][quarter] / quarterly_shares[year][quarter]
+
+    def get_quarter_from_month(self, month):
+        if 1 <= month <= 3:
+            quarter = 'Q2'
+        elif 4 <= month <= 6:
+            quarter = 'Q3'
+        elif 7 <= month <= 9:
+            quarter = 'Q4'
+        else:
+            quarter = 'Q1'
+
+        return quarter
+
+    def get_date_from_quarter(self, year, quarter):
+        if quarter == 'Q2':
+            date_object = datetime.datetime(year, 1, 1)
+        if quarter == 'Q3':
+            date_object = datetime.datetime(year, 4, 1)
+        if quarter == 'Q4':
+            date_object = datetime.datetime(year, 7, 1)
+        else:
+            date_object = datetime.datetime(year, 10, 1)
+
+        return date_object
 
     def plot_eps(self):
         """Plot EPS
@@ -349,13 +435,13 @@ class InrinsicValue:
             json: EPS vs time as a plotly json
         """
         # set EPS list
-        if not hasattr(self, 'eps_list'):
+        if not hasattr(self, 'eps_annual_list'):
             self.get_eps_values()
 
         # using plotly
-        return FinancialsAlpha.produce_plotly_time_series(self.eps_list, self.symbol, 'Earnings per Share')
+        return FinancialsAlpha.produce_plotly_time_series(self.eps_annual_list, self.symbol, 'Earnings per Share')
 
-    def plot_growth_values(self):
+    def plot_annual_growth_values(self):
         """Plot % growth for EPS and revenue
 
         Returns:
@@ -366,41 +452,110 @@ class InrinsicValue:
 
         # revenue growth
         prev_value = None
-        for record in sorted(self.revenue_list.keys()):
+        for record in sorted(self.revenue_annual_list.keys()):
             if prev_value is None:
-                prev_value = self.revenue_list[record]
+                prev_value = self.revenue_annual_list[record]
                 continue
-            if self.revenue_list[record] != 0:
-                revenue_growth[record] = 100*(self.revenue_list[record] - prev_value)/self.revenue_list[record]
+            if self.revenue_annual_list[record] != 0:
+                revenue_growth[record] = 100*(self.revenue_annual_list[record] - prev_value)/self.revenue_annual_list[record]
             else:
                 revenue_growth[record] = 0
-            prev_value = self.revenue_list[record]
+            prev_value = self.revenue_annual_list[record]
 
         # eps growth
         prev_value = None
-        for record in sorted(self.eps_list.keys()):
+        for record in sorted(self.eps_annual_list.keys()):
             if prev_value is None:
-                prev_value = self.eps_list[record]
+                prev_value = self.eps_annual_list[record]
                 continue
-            if self.eps_list[record] != 0:
-                eps_growth[record] = 100*(self.eps_list[record] - prev_value)/self.eps_list[record]
+            if self.eps_annual_list[record] != 0:
+                eps_growth[record] = 100*(self.eps_annual_list[record] - prev_value)/self.eps_annual_list[record]
             else:
                 eps_growth[record] = 0
-            prev_value = self.eps_list[record]
+            prev_value = self.eps_annual_list[record]
         
         # using plotly
-        x,y = zip(*sorted(revenue_growth.items()))
-        data = go.Figure([go.Scatter(x=x, y=y, name='Revenue Growth (%)', )])
-        x,y = zip(*sorted(eps_growth.items()))
-        data.add_trace(go.Scatter(x=x, y=y, name='EPS Growth (%)'))
+        trace = []
+        date_str,growth = zip(*sorted(revenue_growth.items()))
+        trace.append(go.Bar(x=date_str, y=growth, name='Revenue Growth (%)', \
+            hovertemplate='Year: %{x}: <br>Revenue Growth: %{y}'))
+        date_str,growth = zip(*sorted(eps_growth.items()))
+        trace.append(go.Bar(x=date_str, y=growth, name='EPS Growth (%)', \
+            hovertemplate='Year: %{x}: <br>EPS Growth: %{y}'))
 
-        data.update_layout(
-            title= 'Revenue and EPS Growth in %',
-            xaxis_title='Year',
-            yaxis_title= 'Growth %')
-        graph_json = json.dumps(data, cls= plotly.utils.PlotlyJSONEncoder)
+        layout = go.Layout(
+            title={'text': 'Revenu and EPS growth in %'},
+            xaxis={'title': 'Year'},
+            yaxis={'title': 'Growth %'},
+            hovermode='closest',
+        )
+
+        figure = go.Figure(data=trace, layout=layout)
+        graph_json = json.dumps(figure, cls= plotly.utils.PlotlyJSONEncoder)
+
         return graph_json
 
+    def plot_quarterly_growth_values(self):
+        """Plot % growth for EPS and revenue comparing with last year's quarter
+
+        Returns:
+            json: EPS and revenue growth as a plotyly json
+        """
+        revenue_growth = {}
+        eps_growth = {}
+
+        # revenue growth
+        for year in sorted(self.revenue_quarterly_list.keys()):
+            for quarter in self.revenue_quarterly_list[year]:
+                current_value = self.revenue_quarterly_list[year][quarter]
+                prev_year = year - 1
+                if prev_year not in self.revenue_quarterly_list:
+                    continue
+                if quarter not in self.revenue_quarterly_list[prev_year]:
+                    continue
+                prev_value = self.revenue_quarterly_list[prev_year][quarter]
+                date_object = self.get_date_from_quarter(year, quarter)                   
+                if prev_value != 0:
+                    revenue_growth[date_object] = 100*(current_value - prev_value)/prev_value
+                else:
+                    revenue_growth[date_object] = 0
+
+        # eps growth
+        for year in sorted(self.eps_quarterly_list.keys()):
+            prev_year = year - 1
+            if prev_year not in self.eps_quarterly_list:
+                continue
+            for quarter in self.eps_quarterly_list[year]:
+                current_value = self.eps_quarterly_list[year][quarter]
+                if quarter not in self.eps_quarterly_list[prev_year]:
+                    continue
+                prev_value = self.eps_quarterly_list[prev_year][quarter]
+                date_object = self.get_date_from_quarter(year, quarter)
+                if prev_value != 0:
+                    eps_growth[date_object] = 100*(current_value - prev_value)/prev_value
+                else:
+                    eps_growth[date_object] = 0
+        
+        # using plotly
+        trace = []
+        date_str,growth = zip(*sorted(revenue_growth.items()))
+        trace.append(go.Bar(x=date_str, y=growth, name='Revenue Growth (%)', \
+            hovertemplate='Year: %{x}: <br>Revenue Growth: %{y}'))
+        date_str,growth = zip(*sorted(eps_growth.items()))
+        trace.append(go.Bar(x=date_str, y=growth, name='EPS Growth (%)', \
+            hovertemplate='Year: %{x}: <br>EPS Growth: %{y}'))
+
+        layout = go.Layout(
+            title={'text': 'Revenu and EPS growth in %'},
+            xaxis={'title': 'Year'},
+            yaxis={'title': 'Growth %'},
+            hovermode='closest',
+        )
+
+        figure = go.Figure(data=trace, layout=layout)
+        graph_json = json.dumps(figure, cls= plotly.utils.PlotlyJSONEncoder)
+
+        return graph_json
 
 
     

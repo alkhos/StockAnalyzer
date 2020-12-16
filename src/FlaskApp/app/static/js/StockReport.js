@@ -63,6 +63,15 @@ $(function() {
                 $('#earning_growth').html(data['earning_growth']);
                 $('#p_t_b_v_ratio').html(data['p_t_b_v_ratio']);
                 $('#r_o_i_c').html(data['r_o_i_c']);
+                $('#w_a_c_c').html(data['w_a_c_c']);
+                // Peter Lynch
+                $('#p_e').html(data['p_e']);
+                $('#p_e_g').html(data['p_e_g']);
+                $('#d_p_e_g').html(data['d_p_e_g']);
+                $('#n_c_s').html(data['n_c_s']);
+                $('#d_e_ratio').html(data['d_e_ratio']);
+                $('#invetory_turnover').html(data['invetory_turnover']);
+                $('#insider').html(data['insider']);
                 // plot total revenue
                 Plotly.newPlot('total_revenue_plot', JSON.parse(data['total_revenue_plot']));
                 // plot EPS
@@ -76,7 +85,8 @@ $(function() {
                 // plot FCF
                 Plotly.newPlot('free_cash_flow_plot', JSON.parse(data['free_cash_flow_plot']));
                 // Growth Plots
-                Plotly.newPlot('growth_plots', JSON.parse(data['growth_plots']));
+                Plotly.newPlot('growth_plots_annual', JSON.parse(data['growth_plots_annual']));
+                Plotly.newPlot('growth_plots_quarterly', JSON.parse(data['growth_plots_quarterly']));
                 // Links
                 var yfinance = 'https://finance.yahoo.com/quote/' + data['symbol']
                 $("#yfinance").attr('href', yfinance);

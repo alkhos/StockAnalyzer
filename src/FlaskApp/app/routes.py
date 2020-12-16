@@ -65,7 +65,8 @@ def add():
     # retrieve the intrinsic value for session if it exists there and is refreshed in less than a day
     if existing_info is not None and ( datetime.now() - existing_info.created_date).days < 1:
         # get intrinsic value
-        intrinsic_value_calculator.set_financial_statements(existing_info.overview, existing_info.income_statement, 
+        # overview = FA.get_financial_statement(symbol, FA.DocumentType.OVERVIEW, intrinsic_value_calculator.alpha_api_key)
+        intrinsic_value_calculator.set_financial_statements(self.overview, existing_info.income_statement, 
         existing_info.balance_sheet, existing_info.cash_flow)
 
         # retreive the calculatr from financial statements
@@ -115,7 +116,18 @@ def add():
     dividend = FA.get_last_dividend(intrinsic_value_calculator.overview)
     p_t_b_v_ratio = FA.get_price_to_tangible_book_value(intrinsic_value_calculator.balance_sheet, \
         intrinsic_value_calculator.current_price, intrinsic_value_calculator.shares_outstanding)
-    r_o_i_c = FA.get_return_on_invested_capital(intrinsic_value_calculator.income_statement, intrinsic_value_calculator.balance_sheet)
+    r_o_i_c = FA.get_return_on_invested_capital(intrinsic_value_calculator.income_statement, intrinsic_value_calculator.balance_sheet, \
+        intrinsic_value_calculator.cash_flow, effective_tax_rate)
+    w_a_c_c = intrinsic_value_calculator.get_weighted_average_cost_of_capital()
+
+    # peter lynch
+    p_e = FA.get_price_to_earnings_ratio(intrinsic_value_calculator.overview, intrinsic_value_calculator.current_price)
+    p_e_g = FA.get_price_to_earnings_over_growth_ratio(intrinsic_value_calculator.overview, intrinsic_value_calculator.current_price)
+    d_p_e_g = FA.get_dividend_adjusted_price_to_earnings_over_growth_ratio(intrinsic_value_calculator.overview, intrinsic_value_calculator.current_price)
+    n_c_s = FA.get_net_cash_per_share(intrinsic_value_calculator.balance_sheet, intrinsic_value_calculator.shares_outstanding)
+    d_e_ratio = FA.get_debt_to_equity_ratio(intrinsic_value_calculator.balance_sheet)
+    invetory_turnover = FA.get_inventory_turnover_last_year(intrinsic_value_calculator.balance_sheet, intrinsic_value_calculator.income_statement)
+    insider = float(intrinsic_value_calculator.overview['PercentInsiders'])
 
     # plots
     eps_plot = intrinsic_value_calculator.plot_eps()
@@ -123,7 +135,8 @@ def add():
     accounts_receivable_plot = intrinsic_value_calculator.plot_accounts_receivable()
     inventory_plot = intrinsic_value_calculator.plot_inventory()
     free_cash_flow_plot = intrinsic_value_calculator.plot_free_cash_flow()
-    growth_plots = intrinsic_value_calculator.plot_growth_values()
+    growth_plots_annual = intrinsic_value_calculator.plot_annual_growth_values()
+    growth_plots_quarterly = intrinsic_value_calculator.plot_quarterly_growth_values()
 
     # get stock name
     responses = requests.get('https://www.macrotrends.net/stocks/charts/' + symbol)
@@ -158,6 +171,15 @@ def add():
         'earning_growth'            : earning_growth_str,
         'p_t_b_v_ratio'             : round(p_t_b_v_ratio, 2),
         'r_o_i_c'                   : round(r_o_i_c, 2),
+        'w_a_c_c'                   : round(100*w_a_c_c, 2),
+
+        'p_e'                       : round(p_e, 2),
+        'p_e_g'                     : round(p_e_g, 2),
+        'd_p_e_g'                   : round(d_p_e_g, 2),
+        'n_c_s'                     : round(n_c_s, 2),
+        'd_e_ratio'                 : round(d_e_ratio, 2),
+        'invetory_turnover'         : round(invetory_turnover, 2),
+        'insider'                   : round(insider, 2),
 
         'total_revenue_plot'        : total_revenue_plot,
         'eps_plot'                  : eps_plot,
@@ -165,5 +187,6 @@ def add():
         'accounts_receivable_plot'  : accounts_receivable_plot,
         'inventory_plot'            : inventory_plot,
         'free_cash_flow_plot'       : free_cash_flow_plot,
-        'growth_plots'              : growth_plots
+        'growth_plots_annual'       : growth_plots_annual,
+        'growth_plots_quarterly'    : growth_plots_quarterly
     })
