@@ -1,7 +1,6 @@
 from app import db
 import datetime
 from sqlalchemy.dialects.postgresql import JSON
-import sqlalchemy
 
 class Report(db.Model):
     symbol = db.Column(db.String(128), primary_key =True)
@@ -18,4 +17,14 @@ class Report(db.Model):
         balance_sheet_status = 'NotSet' if self.balance_sheet is None else 'Set'
         cash_flow_status = 'NotSet' if self.cash_flow is None else 'Set'
         return '<Symbol {}, create at {}, overview is {}, income statement is {}, balancesheet is {}, cash flow is {}>'\
-        .format(self.symbol, self.created_date.strftime('%Y-%m-%d'),overview_status, income_statement_status, balance_sheet_status,cash_flow_status)    
+        .format(self.symbol, self.created_date.strftime('%Y-%m-%d'),overview_status, income_statement_status, balance_sheet_status,cash_flow_status)
+
+class TickerCik(db.Model):
+    symbol = db.Column(db.String(128), primary_key =True)
+    cik = db.Column(db.String(128))
+    created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+
+    def __repr__(self):
+        return '<Symbol {}, cik {}, created at {}>'\
+        .format(self.symbol, self.cik, self.created_date.strftime('%Y-%m-%d'))    

@@ -23,7 +23,8 @@ $(function() {
                 $("#loader").show();
                 $("#results").hide();
                 $("#plots").hide();
-                $("#links").show();
+                $("#links").hide();
+                $("#misc_buttons").hide();
             },
             success: function(data) {
                 console.log(data)
@@ -70,8 +71,16 @@ $(function() {
                 $('#d_p_e_g').html(data['d_p_e_g']);
                 $('#n_c_s').html(data['n_c_s']);
                 $('#d_e_ratio').html(data['d_e_ratio']);
-                $('#invetory_turnover').html(data['invetory_turnover']);
                 $('#insider').html(data['insider']);
+                // other ratios
+                $('#invetory_turnover').html(data['invetory_turnover']);
+                $('#receivables_turnover').html(data['receivables_turnover']);
+                $('#payables_turnover').html(data['payables_turnover']);
+                $('#asset_turnover').html(data['asset_turnover']);
+                $('#r_o_e').html(data['r_o_e']);
+                $('#r_o_a').html(data['r_o_a']);
+                $('#profit_margin').html(data['profit_margin']);
+                $('#quality_of_income').html(data['quality_of_income']);
                 // plot total revenue
                 Plotly.newPlot('total_revenue_plot', JSON.parse(data['total_revenue_plot']));
                 // plot EPS
@@ -96,6 +105,10 @@ $(function() {
                 $("#macrotrends").attr('href', macrotrends);
                 var annualreports = 'https://www.annualreports.com/Companies?search=' + data['symbol']
                 $("#annualreports").attr('href', annualreports);
+                var gurufocus = 'https://www.gurufocus.com/stock/' + data['symbol'] + '/summary'
+                $("#gurufocus").attr('href', gurufocus);
+                $("#annual").attr('href', data['10-K']);
+                $("#quarterly").attr('href', data['10-Q']);
             },
             error: function() {
                 alert('Failed to retrieve data');
@@ -107,6 +120,7 @@ $(function() {
                 $("#results").show();
                 $("#plots").show();
                 $("#links").show();
+                $("#misc_buttons").show();
             }
         });
     });

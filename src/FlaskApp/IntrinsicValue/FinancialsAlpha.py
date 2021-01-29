@@ -46,7 +46,7 @@ def save_as_json(finiancial_statements, document_type):
     """
     # write output to a file
     symbol = finiancial_statements['symbol'] if 'symbol' in finiancial_statements else finiancial_statements['Symbol']
-    file_name = symbol + '_' + document_type.name  + '_alpha.json'
+    file_name = symbol + '_' + document_type.name  + '.json'
     with open(file_name, 'w') as data_output_file:
         json.dump(finiancial_statements, data_output_file, indent=4, sort_keys=True)
 
@@ -183,6 +183,39 @@ def get_financial_statement_record(finiancial_statement, record_name, find_lates
         value = 0 if last_quarter[record_name] == "None" else int(last_quarter[record_name])
         return value
 
+def get_financial_statement_record_average(finiancial_statement, record_name):
+    """Get any record from the financial statement for the last quarter
+
+    Args:
+        finiancial_statement (json): Financial statement to be used as a json
+        record_name (str): Name of the record from finanacial statement 
+        find_latest_existing (bool, optional): If set to true, and the record not exisiting in the last quarter, we
+            will find the latest one that has a number. Defaults to False.
+
+    Returns:
+        int : Value of the requested item from the financial statement
+    """
+    last_four_quarters = get_last_four_quarters(finiancial_statement)
+    values = []
+    for quarter in last_four_quarters:
+        if quarter[record_name] == "None":
+            continue
+        values.append(int(quarter[record_name]))
+    return float(sum(values))/len(values) # get the average
+
+def get_long_term_debt(balance_sheet):
+    """Get the value of long term debt. Use maximum of long term debt and total long term debt on the statement
+
+    Args:
+        balance_sheet (json): Balance sheet as a json
+
+    Returns:
+        int: long term debt
+    """
+    total_long_term_debt = get_financial_statement_record(balance_sheet, 'totalLongTermDebt')
+    long_term_debt = get_financial_statement_record(balance_sheet, 'longTermDebt')
+    return max(total_long_term_debt, long_term_debt)
+    
 def get_interest_rate(balance_sheet, income_statemet):
     """Get business interest rate as interest expense over total of long-term and short term debt
 
@@ -194,7 +227,7 @@ def get_interest_rate(balance_sheet, income_statemet):
         float: business interest rate in %
     """
     interest_expense = get_financial_statement_record_ttm(income_statemet, 'interestExpense')
-    principal_balance = get_financial_statement_record(balance_sheet, 'totalLongTermDebt') + \
+    principal_balance = get_long_term_debt(balance_sheet) + \
         get_financial_statement_record(balance_sheet, 'shortTermDebt')
     return round(100*interest_expense/principal_balance, 2) if principal_balance != 0 else 0
 
@@ -209,7 +242,7 @@ def get_long_term_interest_rate(balance_sheet, income_statemet):
         float: long term interest rate in %
     """
     interest_expense = get_financial_statement_record_ttm(income_statemet, 'interestExpense')
-    principal_balance = get_financial_statement_record(balance_sheet, 'totalLongTermDebt') 
+    principal_balance = get_long_term_debt(balance_sheet) 
     return round(100*interest_expense/principal_balance, 2) if principal_balance != 0 else 0
 
 def get_metadata_item(company_overview, record_name):
@@ -237,7 +270,7 @@ def get_market_value_of_debt(balance_sheet):
     Returns:
         float: market value of debt
     """
-    long_term_debt = get_financial_statement_record(balance_sheet,'totalLongTermDebt')
+    long_term_debt = get_long_term_debt(balance_sheet)
     short_term_debt = get_financial_statement_record(balance_sheet,'shortTermDebt')
     market_value_of_debt = (long_term_debt + short_term_debt) * 1.2
     return round(market_value_of_debt)
@@ -344,6 +377,17 @@ def get_price_to_tangible_book_value(balance_sheet, stock_price, shares_outstand
     return float(stock_price/(tangible_book_value/shares_outstanding))
 
 def get_return_on_invested_capital(income_statement, balance_sheet, cash_flow, tax_rate=''):
+    """Get the return on invested capital as nopat over invested capital
+
+    Args:
+        income_statement (json): Income statement as a json
+        balance_sheet (json): Balance sheet as a json
+        cash_flow (json): cash flow statement as a json
+        tax_rate (str, optional): Company tax rate %. If not provided, we will get it as tax expense over income before tax. Defaults to ''.
+
+    Returns:
+        float: ROIC
+    """
     income_before_tax = get_financial_statement_record_ttm(income_statement, 'incomeBeforeTax')
     income_tax_expense = get_financial_statement_record_ttm(income_statement, 'incomeTaxExpense')
     operating_income = get_financial_statement_record_ttm(income_statement, 'operatingIncome')
@@ -360,6 +404,15 @@ def get_return_on_invested_capital(income_statement, balance_sheet, cash_flow, t
     return float(100*nopat/invested_capital)
 
 def get_invested_capital(balance_sheet, cash_flow):
+    """Get the value of invested capital as the some of all income from non-operating activities
+
+    Args:
+        balance_sheet (json): Balance sheet as a json
+        cash_flow (json): cash flow statement as a json
+
+    Returns:
+        int: Invested capital value
+    """
     # from balance sheet
     long_term_debt = get_financial_statement_record(balance_sheet, 'longTermDebt')
     short_term_debt = get_financial_statement_record(balance_sheet, 'shortTermDebt')
@@ -378,12 +431,49 @@ def get_invested_capital(balance_sheet, cash_flow):
 
     return total_debt_and_leases + total_equity_and_equity_equivalents + non_operating_cash
 
+def get_return_on_equity(balance_sheet, income_statement):
+    shareholder_equity = get_financial_statement_record_average(balance_sheet, 'totalShareholderEquity')
+    net_income = get_financial_statement_record_ttm(income_statement, 'netIncome')
+    return float(net_income/shareholder_equity)
+
+def get_return_on_assets(balance_sheet, income_statement):
+    total_assets = get_financial_statement_record_average(balance_sheet, 'totalAssets')
+    net_income = get_financial_statement_record_ttm(income_statement, 'netIncome')
+    return float(net_income/total_assets)
+
+def get_net_profit_margin(income_statement):
+    net_income = get_financial_statement_record_ttm(income_statement, 'netIncome')
+    total_revenue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
+    return float(net_income/total_revenue)
+
+def get_quality_of_income(income_statement, cash_flow):
+    cash_from_operating_activities = get_financial_statement_record_ttm(cash_flow, 'operatingCashflow')
+    net_income = get_financial_statement_record_ttm(income_statement, 'netIncome')
+    return float(cash_from_operating_activities/net_income)
 
 def get_price_to_earnings_ratio(overview, stock_price):
+    """Get the diluted TTM P/E ration
+
+    Args:
+        overview (json): Company overview passed as json
+        stock_price (float): current stock price
+
+    Returns:
+        float: P/E
+    """ 
     diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
     return float(stock_price/diluted_earnings_per_share)
 
 def get_price_to_earnings_over_growth_ratio(overview, stock_price):
+    """Get the PEG ratio
+
+    Args:
+        overview (json): Company overview passed as json
+        stock_price (float): current stock price
+
+    Returns:
+        float: PEG ratio
+    """
     diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
     nominal_peg = float(overview['PEGRatio'])
     nominal_pe = float(overview['PERatio'])
@@ -391,6 +481,15 @@ def get_price_to_earnings_over_growth_ratio(overview, stock_price):
     return float(diluted_earnings_per_share/growth)
 
 def get_dividend_adjusted_price_to_earnings_over_growth_ratio(overview, stock_price):
+    """Get the dividend adjusted PEG ratio
+
+    Args:
+        overview (json): Company overview passed as json
+        stock_price (float): current stock price
+
+    Returns:
+        float: Dividend adjusted PEG ratio
+    """
     diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
     nominal_peg = float(overview['PEGRatio'])
     nominal_pe = float(overview['PERatio'])
@@ -399,26 +498,65 @@ def get_dividend_adjusted_price_to_earnings_over_growth_ratio(overview, stock_pr
     return float(diluted_earnings_per_share/(growth + dividend_yield))
 
 def get_net_cash_per_share(balance_sheet, shares_outstanding):
+    """Get the net cash per share as the total cash and short term investments over shares outstanding
+
+    Args:
+        balance_sheet (json): Balance sheet as a json
+        shares_outstanding (int): current number of shares outstanding
+
+    Returns:
+        float: net cash per share
+    """
     net_cash = get_financial_statement_record(balance_sheet, 'cashAndShortTermInvestments')
     return float(net_cash/shares_outstanding)
 
 def get_debt_to_equity_ratio(balance_sheet):
+    """Get the debt to equity ratio as total liabilities over total shareholder's equity
+
+    Args:
+        balance_sheet (json): Balance sheet as a json
+
+    Returns:
+        float: D/E ratio
+    """
     total_liabilities = get_financial_statement_record(balance_sheet, 'totalLiabilities')
     total_shareholder_equity = get_financial_statement_record(balance_sheet, 'totalShareholderEquity')
     return float(total_liabilities/total_shareholder_equity)
 
 def get_inventory_turnover_last_year(balance_sheet, income_statement):
+    """Inventory turnover for last year as cost of goods sold over average inventory
+
+    Args:
+        income_statement (json): Income statement as a json
+        balance_sheet (json): Balance sheet as a json
+
+    Returns:
+        float: inventory turnover
+    """
+    cogs = get_cost_of_goods_sold(income_statement)
+    average_inventory = get_financial_statement_record_average(balance_sheet, 'inventory')
+    return float(cogs/average_inventory)
+
+def get_cost_of_goods_sold(income_statement):
     total_reveneue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
     gross_profit = get_financial_statement_record_ttm(income_statement, 'grossProfit')
     cogs = total_reveneue - gross_profit
-    last_four_quarters_balance_sheet = get_last_four_quarters(balance_sheet)
-    inventories = []
-    c = 0
-    for record in last_four_quarters_balance_sheet:
-        inventories.append(int(record['inventory']))
-        c = c + 1
-    average_inventory = sum(inventories) / c
-    return float(cogs/average_inventory)
+    return cogs
+
+def get_receivable_turnover_ratio(balance_sheet, income_statement):
+    revenue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
+    average_receivables = get_financial_statement_record_average(balance_sheet, 'netReceivables')
+    return float(revenue/average_receivables)
+
+def get_payable_turnover_ratio(balance_sheet, income_statement):
+    cogs = get_cost_of_goods_sold(income_statement)
+    average_receivables = get_financial_statement_record_average(balance_sheet, 'accountsPayable')
+    return float(cogs/average_receivables)
+
+def get_asset_turnover(balance_sheet, income_statement):
+    total_reveneue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
+    average_assets = get_financial_statement_record_average(balance_sheet, 'totalAssets')
+    return float(total_reveneue/average_assets)
 
 def count_earning_deficits(income_statement):
     """Find number of annual reports and number of quarters reporting earnings deficit

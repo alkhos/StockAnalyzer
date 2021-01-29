@@ -330,7 +330,7 @@ class InrinsicValue:
             inventories[datetime_object] = inventory_ttm / 1e6
 
         # using plotly
-        return FinancialsAlpha.produce_plotly_time_series(inventories, self.symbol, 'Accounts Receivable')
+        return FinancialsAlpha.produce_plotly_time_series(inventories, self.symbol, 'Inventory')
 
     def get_eps_values(self):
         """get EPS values for each year and each quarter
@@ -349,6 +349,8 @@ class InrinsicValue:
             datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
             if datetime_object in self.eps_annual_list:
                 total_income = self.eps_annual_list[datetime_object]
+                if record['commonStockSharesOutstanding'] == 'None':
+                    continue
                 total_shares = int(record['commonStockSharesOutstanding'])
                 self.eps_annual_list[datetime_object] = total_income / total_shares
 

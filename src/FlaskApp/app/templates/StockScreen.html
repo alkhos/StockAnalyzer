@@ -5,6 +5,7 @@
     <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='styles/bootstrap.min.css') }}">
     <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="/static/js/StockReport.js?r={{reload}}"></script>
+    <script src="/static/js/DownloadFinancials.js?r={{reload}}"></script>
 </head>
 
 <body>
@@ -33,6 +34,9 @@
         <button id="submit" type="submit" class="btn btn-primary">Submit</button>
     </form>
     <br/>
+    <div id="misc_buttons">
+        <button id="download" type="submit" class="btn btn-primary">Download Financials</button>
+    </div>
     <!-- Image loader -->
     <div id='loader' style='display: none;'>
         <img src='/static/images/reload_results.gif' width='72px' height='72px'>
@@ -258,7 +262,7 @@
                     <td>
                         <div id="p_e"></div>
                     </td>
-                    <td>Should have more growth than P/E</td>
+                    <td>Should have more growth than P/E:</td>
                 </tr>
                 <tr>
                     <th scope="row">Price / Earnings to Growth Ratio (PEG):</th>
@@ -268,16 +272,16 @@
                     <td>No more than 1</td>
                 </tr>
                 <tr>
-                    <th scope="row">Dividend Adjusted Price / Earnings to Growth Ratio (DPEG)::</th>
+                    <th scope="row">Dividend Adjusted Price / Earnings to Growth Ratio (DPEG):</th>
                     <td>
                         <div id="d_p_e_g"></div>
                     </td>
                     <td>No more than 1</td>
                 </tr>
                 <tr>
-                    <th scope="row" class="tool-tip" title="Earning growth this year vs last year and this quarter vs last quarter">Net Cash Per Share:</th>
+                    <th scope="row" class="tool-tip" title="% of a company’s share price available to spend on strengthening the business, paying down debt, returning money to shareholders, and other positive campaigns.">Net Cash Per Share:</th>
                     <td>
-                        <div id="n_c_s" class="tool-tip" title="% of a company’s share price available to spend on strengthening the business, paying down debt, returning money to shareholders, and other positive campaigns."></div>
+                        <div id="n_c_s"></div>
                     </td>
                     <td>Compare to EPS</td>
                 </tr>
@@ -289,18 +293,84 @@
                     <td>No more than 2</td>
                 </tr>
                 <tr>
-                    <th scope="row" class="tool-tip" title="Shows how many times a company has sold and replaced inventory during a given period. A low turnover implies weak sales and possibly excess inventory, while a high ratio implies either strong sales or insufficient inventory.">Inventory Turnover:</th>
+                    <th scope="row">Insider Ownership (%):</th>
+                    <td>
+                        <div id="insider"></div>
+                    </td>
+                    <td>Reasonable stake by owners</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="header">
+            <h2>
+                Other Metrics
+            </h2>
+        </div>
+        <!-- Peter Lynch Criteria -->
+        <table class="table table-hover table-dark table-striped w-auto">
+            <thead>
+                <tr>
+                    <th scope="col"><b>Metric</b></th>
+                    <th scope="col"><b>Value</b></th>
+                    <th scope="col"><b>Requirement</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Cogs over inventory. Shows how many times a company has sold and replaced inventory during a given period. A low turnover implies weak sales and possibly excess inventory, while a high ratio implies either strong sales or insufficient inventory.">Inventory Turnover:</th>
                     <td>
                         <div id="invetory_turnover"></div>
                     </td>
                     <td>Between 5 to 10</td>
                 </tr>
                 <tr>
-                    <th scope="row">Insider Ownership (%):</th>
+                    <th scope="row" class="tool-tip" title="Net credit sales over receivables. Shows a company's effectiveness in collecting its receivables or money owed by clients.">Account Receivable Turnover:</th>
                     <td>
-                        <div id="insider"></div>
+                        <div id="receivables_turnover"></div>
+                    </td>
+                    <td>The higher the better</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Purchases over receivables. Shows the rate at which a company pays off its suppliers.">Account Payable Turnover:</th>
+                    <td>
+                        <div id="payables_turnover"></div>
+                    </td>
+                    <td>The higher the better</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Total sales to assets. Shows how effectively company is using its assets to generate sales.">Asset Turnover:</th>
+                    <td>
+                        <div id="asset_turnover"></div>
+                    </td>
+                    <td>2.5+ desirable</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Measures how the profitability of a corporation in relation to stockholders’ equity. Net Income over shareholder equity.">Return on Equity (ROE) (%):</th>
+                    <td>
+                        <div id="r_o_e"></div>
+                    </td>
+                    <td>17% or more</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Shows how well a company utilizes its assets, by determining how profitable a company is relative to its total assets..">Return on Assets (ROA) (%):</th>
+                    <td>
+                        <div id="r_o_a"></div>
+                    </td>
+                    <td>More than 5%</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="Assesses if a company's management is generating enough profit from its sales and whether operating costs and overhead costs are being contained">Net Profit Margin (%):</th>
+                    <td>
+                        <div id="profit_margin"></div>
                     </td>
                     <td>Reasonable stake by owners</td>
+                </tr>
+                <tr>
+                    <th scope="row" class="tool-tip" title="% of income that is due to higher sales or lower costs. An increase in net income without a corresponding increase in cash flow from operations is a red flag.">Quality of Income:</th>
+                    <td>
+                        <div id="quality_of_income"></div>
+                    </td>
+                    <td>Desired Greater than 1.0</td>
                 </tr>
             </tbody>
         </table>
@@ -328,6 +398,27 @@
             <div class="card-body">
                 <h5 class="card-title">Macro Trends</h5>
                 <a id="macrotrends" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem;display: inline-block;">
+            <img src='/static/images/gurufocus.jpg' class="card-img-top" alt="..." width='72px' height='72px'>
+            <div class="card-body">
+                <h5 class="card-title">Guru Focus</h5>
+                <a id="gurufocus" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem;display: inline-block;">
+            <img src='/static/images/annual.jpg' class="card-img-top" alt="..." width='72px' height='72px'>
+            <div class="card-body">
+                <h5 class="card-title">Latest Annual Report</h5>
+                <a id="annual" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem;display: inline-block;">
+            <img src='/static/images/quarterly.jpg' class="card-img-top" alt="..." width='72px' height='72px'>
+            <div class="card-body">
+                <h5 class="card-title">Latest Quarterly Report</h5>
+                <a id="quarterly" href="#" target="_blank" class="btn btn-primary stretched-link">View</a>
             </div>
         </div>
         <div class="card" style="width: 18rem;display: inline-block;">
