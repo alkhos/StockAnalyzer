@@ -24,6 +24,7 @@ $(function() {
                 $("#results").hide();
                 $("#plots").hide();
                 $("#links").hide();
+                $("#linksv2").hide();
                 $("#misc_buttons").hide();
             },
             success: function(data) {
@@ -120,6 +121,7 @@ $(function() {
                 $("#results").show();
                 $("#plots").show();
                 $("#links").show();
+                $("#linksv2").show();
                 $("#misc_buttons").show();
             }
         });

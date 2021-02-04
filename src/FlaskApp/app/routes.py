@@ -44,6 +44,10 @@ def StockReport():
 def main():
     return render_template('StockReport.html', reload = time.time())
 
+@app.route("/StockScreen")
+def StockScreen():
+    return render_template('StockScreen.html', reload = time.time())
+
 @app.route("/api/info")
 def api_info():
     info = {
