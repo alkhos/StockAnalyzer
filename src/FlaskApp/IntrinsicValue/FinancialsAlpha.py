@@ -201,7 +201,10 @@ def get_financial_statement_record_average(finiancial_statement, record_name):
         if quarter[record_name] == "None":
             continue
         values.append(int(quarter[record_name]))
-    return float(sum(values))/len(values) # get the average
+    if len(values) != 0:
+        return float(sum(values))/len(values) # get the average
+    else:
+        return float(0)
 
 def get_long_term_debt(balance_sheet):
     """Get the value of long term debt. Use maximum of long term debt and total long term debt on the statement
@@ -474,11 +477,14 @@ def get_price_to_earnings_over_growth_ratio(overview, stock_price):
     Returns:
         float: PEG ratio
     """
-    diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
-    nominal_peg = float(overview['PEGRatio'])
-    nominal_pe = float(overview['PERatio'])
-    growth = nominal_pe / nominal_peg
-    return float(diluted_earnings_per_share/growth)
+    if overview['DilutedEPSTTM'] != 'None' and overview['PEGRatio'] != 'None' and overview['PERatio'] != 'None':
+        diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
+        nominal_peg = float(overview['PEGRatio'])
+        nominal_pe = float(overview['PERatio'])
+        growth = nominal_pe / nominal_peg
+        return float(diluted_earnings_per_share/growth)
+    else:
+        return float(0)
 
 def get_dividend_adjusted_price_to_earnings_over_growth_ratio(overview, stock_price):
     """Get the dividend adjusted PEG ratio
@@ -490,12 +496,15 @@ def get_dividend_adjusted_price_to_earnings_over_growth_ratio(overview, stock_pr
     Returns:
         float: Dividend adjusted PEG ratio
     """
-    diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
-    nominal_peg = float(overview['PEGRatio'])
-    nominal_pe = float(overview['PERatio'])
-    growth = nominal_pe / nominal_peg
-    dividend_yield = float(overview['DividendYield']) if overview['DividendYield'] != 'None' else 0
-    return float(diluted_earnings_per_share/(growth + dividend_yield))
+    if overview['DilutedEPSTTM'] != 'None' and overview['PEGRatio'] != 'None' and overview['PERatio'] != 'None':
+        diluted_earnings_per_share = float(overview['DilutedEPSTTM'])
+        nominal_peg = float(overview['PEGRatio'])
+        nominal_pe = float(overview['PERatio'])
+        growth = nominal_pe / nominal_peg
+        dividend_yield = float(overview['DividendYield']) if overview['DividendYield'] != 'None' else 0
+        return float(diluted_earnings_per_share/(growth + dividend_yield))
+    else:
+        return float(0)
 
 def get_net_cash_per_share(balance_sheet, shares_outstanding):
     """Get the net cash per share as the total cash and short term investments over shares outstanding
@@ -533,9 +542,12 @@ def get_inventory_turnover_last_year(balance_sheet, income_statement):
     Returns:
         float: inventory turnover
     """
-    cogs = get_cost_of_goods_sold(income_statement)
+    cogs = get_financial_statement_record_average(income_statement, 'costOfRevenue')
     average_inventory = get_financial_statement_record_average(balance_sheet, 'inventory')
-    return float(cogs/average_inventory)
+    if average_inventory != 0:
+        return float(cogs/average_inventory)
+    else:
+        return 0
 
 def get_cost_of_goods_sold(income_statement):
     total_reveneue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
@@ -546,12 +558,18 @@ def get_cost_of_goods_sold(income_statement):
 def get_receivable_turnover_ratio(balance_sheet, income_statement):
     revenue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
     average_receivables = get_financial_statement_record_average(balance_sheet, 'netReceivables')
-    return float(revenue/average_receivables)
+    if average_receivables != 0:
+        return float(revenue/average_receivables)
+    else:
+        return 0
 
 def get_payable_turnover_ratio(balance_sheet, income_statement):
     cogs = get_cost_of_goods_sold(income_statement)
     average_receivables = get_financial_statement_record_average(balance_sheet, 'accountsPayable')
-    return float(cogs/average_receivables)
+    if average_receivables != 0:
+        return float(cogs/average_receivables)
+    else:
+        return 0
 
 def get_asset_turnover(balance_sheet, income_statement):
     total_reveneue = get_financial_statement_record_ttm(income_statement, 'totalRevenue')
@@ -636,3 +654,14 @@ def produce_plotly_time_series(input_dictionary, symbol, record_name):
         yaxis_title=record_name + ' (Million of Dollars)')
     graph_json = json.dumps(data, cls= plotly.utils.PlotlyJSONEncoder)
     return graph_json
+
+def get_numeric_record(record_map, record_name, type):
+    if record_name in record_map:
+        if record_map[record_name] == 'None':
+            return 0
+        if type == 'int':
+            return int(record_map[record_name])
+        elif type == 'float':
+            return float(record_map[record_name])
+    else:
+        return 0

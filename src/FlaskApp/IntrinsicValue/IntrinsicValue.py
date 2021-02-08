@@ -269,68 +269,83 @@ class InrinsicValue:
         # using plotly
         return FinancialsAlpha.produce_plotly_time_series(self.revenue_annual_list, self.symbol, 'Total Revenue')
 
-    def plot_accounts_payable(self):
-        """Plot accounts payable
+    def plot_days_payable_outstanding(self):
+        """Plot days payable outstanding using ending payables
 
         Returns:
-            json: accounts payable vs time as a plotly json
+            json: days payable outstanding vs time as a plotly json
         """
-        accounts_payables = {}
+        days_payable_outstanding = {}
         for record in self.balance_sheet['annualReports']:
             datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
-            accounts_payable = int(record['accountsPayable'])
-            accounts_payables[datetime_object] = accounts_payable / 1e6
+            days_payable_outstanding[datetime_object] = FinancialsAlpha.get_numeric_record(record, 'accountsPayable', 'int') 
+
+        for record in self.income_statement['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            cost_of_revenue = int(record['costOfRevenue'])
+            days_payable_outstanding[datetime_object] = 365* (days_payable_outstanding[datetime_object] / cost_of_revenue)
 
         # add TTM
         datetime_object = datetime.datetime.now()
         accounts_payable_ttm = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'accountsPayable')
+        cost_of_revenue_ttm = FinancialsAlpha.get_financial_statement_record_ttm(self.income_statement, 'costOfRevenue')
         if accounts_payable_ttm != 0:
-            accounts_payables[datetime_object] = accounts_payable_ttm / 1e6
+            days_payable_outstanding[datetime_object] = 365* (accounts_payable_ttm / cost_of_revenue_ttm)
 
         # using plotly
-        return FinancialsAlpha.produce_plotly_time_series(accounts_payables, self.symbol, 'Accounts Payable')
+        return FinancialsAlpha.produce_plotly_time_series(days_payable_outstanding, self.symbol, 'Days Payable Outstanding')
 
-    def plot_accounts_receivable(self):
-        """Plot accounts receivable
+    def plot_days_sales_outstanding(self):
+        """Plot days sale outstanding
 
         Returns:
-            json: accounts receivable vs time as a plotly json
+            json: days sale outstanding vs time as a plotly json
         """
-        accounts_receivables = {}
+        days_sale_outstanding = {}
         for record in self.balance_sheet['annualReports']:
             datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
-            accounts_receivable = int(record['netReceivables'])
-            accounts_receivables[datetime_object] = accounts_receivable / 1e6
+            days_sale_outstanding[datetime_object] = FinancialsAlpha.get_numeric_record(record, 'netReceivables', 'int') 
+
+        for record in self.income_statement['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            total_revenue = int(record['totalRevenue'])
+            days_sale_outstanding[datetime_object] = 365*(days_sale_outstanding[datetime_object] / total_revenue)
 
         # add TTM
         datetime_object = datetime.datetime.now()
         accounts_receivable_ttm = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'netReceivables')
+        total_revenue_ttm = FinancialsAlpha.get_financial_statement_record_ttm(self.income_statement, 'totalRevenue')
         if accounts_receivable_ttm != 0:
-            accounts_receivables[datetime_object] = accounts_receivable_ttm / 1e6
+            days_sale_outstanding[datetime_object] = 365*(accounts_receivable_ttm / total_revenue_ttm)
 
         # using plotly
-        return FinancialsAlpha.produce_plotly_time_series(accounts_receivables, self.symbol, 'Accounts Receivable')
+        return FinancialsAlpha.produce_plotly_time_series(days_sale_outstanding, self.symbol, 'Days Sale Outstanding')
 
-    def plot_inventory(self):
-        """Plot inventory
+    def plot_days_sale_of_inventory(self):
+        """Plot days sale of inventory
 
         Returns:
-            json: inventory vs time as a plotly json
+            json: days sale of inventory vs time as a plotly json
         """
-        inventories = {}
+        days_sale_of_inventory = {}
         for record in self.balance_sheet['annualReports']:
             datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
-            inventory = int(record['inventory'])
-            inventories[datetime_object] = inventory / 1e6
+            days_sale_of_inventory[datetime_object] = FinancialsAlpha.get_numeric_record(record, 'inventory', 'int')
+
+        for record in self.income_statement['annualReports']:
+            datetime_object = datetime.datetime.strptime(record['fiscalDateEnding'], '%Y-%m-%d')
+            cost_of_revenue = FinancialsAlpha.get_numeric_record(record, 'costOfRevenue', 'int')
+            days_sale_of_inventory[datetime_object] = 365 * (days_sale_of_inventory[datetime_object] / cost_of_revenue)
 
         # add TTM
         datetime_object = datetime.datetime.now()
         inventory_ttm = FinancialsAlpha.get_financial_statement_record(self.balance_sheet, 'inventory')
+        cost_of_revenue_ttm = FinancialsAlpha.get_financial_statement_record_ttm(self.income_statement, 'costOfRevenue')
         if inventory_ttm != 0:
-            inventories[datetime_object] = inventory_ttm / 1e6
+            days_sale_of_inventory[datetime_object] = 365 * (inventory_ttm / cost_of_revenue_ttm)
 
         # using plotly
-        return FinancialsAlpha.produce_plotly_time_series(inventories, self.symbol, 'Inventory')
+        return FinancialsAlpha.produce_plotly_time_series(days_sale_of_inventory, self.symbol, 'Days Sale of Inventory')
 
     def get_eps_values(self):
         """get EPS values for each year and each quarter
@@ -558,6 +573,8 @@ class InrinsicValue:
         graph_json = json.dumps(figure, cls= plotly.utils.PlotlyJSONEncoder)
 
         return graph_json
+
+
 
 
     

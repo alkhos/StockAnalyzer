@@ -137,9 +137,9 @@ def intrinsicvalue():
 
     # plots
     eps_plot = intrinsic_value_calculator.plot_eps()
-    accounts_payable_plot = intrinsic_value_calculator.plot_accounts_payable()
-    accounts_receivable_plot = intrinsic_value_calculator.plot_accounts_receivable()
-    inventory_plot = intrinsic_value_calculator.plot_inventory()
+    accounts_payable_plot = intrinsic_value_calculator.plot_days_payable_outstanding()
+    accounts_receivable_plot = intrinsic_value_calculator.plot_days_sales_outstanding()
+    inventory_plot = intrinsic_value_calculator.plot_days_sale_of_inventory()
     free_cash_flow_plot = intrinsic_value_calculator.plot_free_cash_flow()
     growth_plots_annual = intrinsic_value_calculator.plot_annual_growth_values()
     growth_plots_quarterly = intrinsic_value_calculator.plot_quarterly_growth_values()

@@ -110,6 +110,10 @@ $(function() {
                 $("#gurufocus").attr('href', gurufocus);
                 $("#annual").attr('href', data['10-K']);
                 $("#quarterly").attr('href', data['10-Q']);
+                var jodie = 'https://jodie.ai/company/' + data['symbol']
+                $("#jodie").attr('href', jodie);
+                var swaggy = 'https://swaggystocks.com/dashboard/stocks/financials/' + data['symbol'] + '/key-financials'
+                $("#swaggy").attr('href', swaggy);
             },
             error: function() {
                 alert('Failed to retrieve data');
